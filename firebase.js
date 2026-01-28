@@ -1,14 +1,11 @@
-// ===== FIREBASE CONFIGURATION =====
-// IMPORTANT: Replace with your own Firebase config from Firebase Console
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY_HERE",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID",
-    measurementId: "YOUR_MEASUREMENT_ID"
-};
+    apiKey: "AIzaSyBNO9MzGbWPl6SqqZP0qD4HiJNxdbu9xlM",
+    authDomain: "tools-ai-1948b.firebaseapp.com",
+    projectId: "tools-ai-1948b",
+    storageBucket: "tools-ai-1948b.firebasestorage.app",
+    messagingSenderId: "656888037304",
+    appId: "1:656888037304:web:c7f398b589e58c9ab0594d"
+  };
 
 // ===== FIREBASE INITIALIZATION =====
 // Initialize Firebase
