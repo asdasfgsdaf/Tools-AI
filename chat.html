@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - AI Tools Hub</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="chat.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+</head>
+<body>
+    <!-- Chat Navigation -->
+    <nav class="chat-nav">
+        <div class="chat-nav-container">
+            <div class="chat-nav-left">
+                <a href="index.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Back to Tools
+                </a>
+                <div class="chat-context" id="chat-context">
+                    <!-- Context will be set by JavaScript -->
+                </div>
+            </div>
+            <div class="chat-nav-right">
+                <div class="chat-nav-auth" id="chat-auth-container">
+                    <!-- Auth buttons will be inserted here -->
+                </div>
+                <button class="chat-history-btn" id="history-toggle">
+                    <i class="fas fa-history"></i> History
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Chat Container -->
+    <div class="chat-container">
+        <!-- Chat History Sidebar -->
+        <aside class="chat-history-sidebar" id="history-sidebar">
+            <div class="history-header">
+                <h3><i class="fas fa-history"></i> Chat History</h3>
+                <button class="close-history" id="close-history">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="history-filters">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="programming">Programming</button>
+                <button class="filter-btn" data-filter="image">Image</button>
+            </div>
+            <div class="history-list" id="history-list">
+                <!-- Chat history items will be loaded here -->
+                <div class="history-empty">
+                    <i class="fas fa-comment-slash"></i>
+                    <p>No chat history yet</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Chat Main Area -->
+        <main class="chat-main">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="chat-ai-icon" id="chat-ai-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="chat-header-text">
+                        <h2 id="chat-title">AI Assistant</h2>
+                        <p id="chat-subtitle">Start a conversation about programming or image generation</p>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="chat-action-btn" id="clear-chat" title="Clear Chat">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                    <button class="chat-action-btn" id="save-chat" title="Save Chat">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Messages Area -->
+            <div class="chat-messages" id="chat-messages">
+                <!-- Welcome Message -->
+                <div class="message welcome-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-sender">AI Assistant</div>
+                        <div class="message-text">
+                            <p>Hello! I'm your AI assistant for <span id="welcome-context">programming and image generation</span>.</p>
+                            <p>You can ask me about:</p>
+                            <ul>
+                                <li>Code examples and explanations</li>
+                                <li>Programming best practices</li>
+                                <li>Debugging assistance</li>
+                                <li>Image generation prompts</li>
+                                <li>Creative ideas for visuals</li>
+                            </ul>
+                            <p>Start by typing your question below!</p>
+                        </div>
+                        <div class="message-time">Just now</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="chat-input-area">
+                <div class="chat-input-container">
+                    <div class="input-actions">
+                        <button class="input-action-btn" id="attach-btn" title="Attach file">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <button class="input-action-btn" id="prompt-btn" title="Suggested prompts">
+                            <i class="fas fa-lightbulb"></i>
+                        </button>
+                    </div>
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="chat-input" 
+                            placeholder="Type your message here... (Press Shift+Enter for new line, Enter to send)" 
+                            rows="1"
+                        ></textarea>
+                        <button class="send-btn" id="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="input-footer">
+                        <div class="auth-notice" id="auth-notice">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Sign in to save your chat history</span>
+                        </div>
+                        <div class="char-count">
+                            <span id="char-count">0</span>/1000
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Prompts -->
+                <div class="quick-prompts" id="quick-prompts">
+                    <button class="quick-prompt" data-prompt="How do I implement a binary search algorithm?">
+                        <i class="fas fa-code"></i> Binary search example
+                    </button>
+                    <button class="quick-prompt" data-prompt="What are the best practices for React component structure?">
+                        <i class="fab fa-react"></i> React best practices
+                    </button>
+                    <button class="quick-prompt" data-prompt="Generate an image prompt for a futuristic city at night">
+                        <i class="fas fa-image"></i> Futuristic city prompt
+                    </button>
+                    <button class="quick-prompt" data-prompt="How can I optimize Python code for better performance?">
+                        <i class="fab fa-python"></i> Python optimization
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Prompt Suggestions Modal -->
+    <div class="modal" id="prompt-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-lightbulb"></i> Suggested Prompts</h3>
+                <button class="modal-close" id="close-prompt-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="prompt-category">
+                    <h4><i class="fas fa-code"></i> Programming</h4>
+                    <div class="prompt-list">
+                        <button class="suggested-prompt" data-prompt="Explain the concept of closures in JavaScript with examples">
+                            JavaScript closures
+                        </button>
+                        <button class="suggested-prompt" data-prompt="Write a Python function to validate email addresses using regex">
+                            Email validation regex
+                        </button>
+                        <button class="suggested-prompt" data-prompt="How do I handle errors in async/await functions in Node.js?">
+                            Async/await error handling
+                        </button>
+                        <button class="suggested-prompt" data-prompt="Compare REST APIs vs GraphQL for a mobile application">
+                            REST vs GraphQL
+                        </button>
+                    </div>
+                </div>
+                <div class="prompt-category">
+                    <h4><i class="fas fa-image"></i> Image Generation</h4>
+                    <div class="prompt-list">
+                        <button class="suggested-prompt" data-prompt="Create a prompt for a mystical forest with glowing mushrooms and fairies">
+                            Mystical forest prompt
+                        </button>
+                        <button class="suggested-prompt" data-prompt="How can I create realistic human portraits with AI image generation?">
+                            Realistic portraits
+                        </button>
+                        <button class="suggested-prompt" data-prompt="Generate a cyberpunk cityscape with neon lights and flying cars">
+                            Cyberpunk cityscape
+                        </button>
+                        <button class="suggested-prompt" data-prompt="What are the best parameters for generating high-quality product images?">
+                            Product image parameters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="firebase.js"></script>
+    <script src="chat.js"></script>
+</body>
+</html>
