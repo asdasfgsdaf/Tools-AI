@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Tools Hub - Programming & Image Generation</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-robot"></i>
+                <h1>AI Tools Hub</h1>
+            </div>
+            <div class="nav-links">
+                <a href="#programming" class="nav-link active" data-category="programming">
+                    <i class="fas fa-code"></i> Programming
+                </a>
+                <a href="#image" class="nav-link" data-category="image">
+                    <i class="fas fa-image"></i> Image Generation
+                </a>
+            </div>
+            <div class="nav-auth">
+                <div id="auth-container">
+                    <!-- Auth buttons will be inserted here by JavaScript -->
+                </div>
+                <button class="mobile-menu-btn" id="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobile-menu">
+        <div class="mobile-menu-header">
+            <h3>AI Tools Hub</h3>
+            <button class="mobile-menu-close" id="mobile-menu-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="mobile-menu-links">
+            <a href="#programming" class="mobile-nav-link" data-category="programming">
+                <i class="fas fa-code"></i> Programming
+            </a>
+            <a href="#image" class="mobile-nav-link" data-category="image">
+                <i class="fas fa-image"></i> Image Generation
+            </a>
+        </div>
+        <div class="mobile-auth-container" id="mobile-auth-container">
+            <!-- Mobile auth buttons will be inserted here -->
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2 class="hero-title">Discover the Best AI Tools for</h2>
+                <h1 class="hero-main-title">
+                    <span class="gradient-text">Programming</span> & 
+                    <span class="gradient-text">Image Generation</span>
+                </h1>
+                <p class="hero-subtitle">
+                    A curated collection of cutting-edge AI tools to boost your productivity and creativity. 
+                    All in one place, with persistent chat history and seamless experience.
+                </p>
+            </div>
+            
+            <!-- Stats Section -->
+            <div class="stats-container">
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number" id="ai-count">8</h3>
+                        <p class="stats-label">Active AI Tools</p>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number">2</h3>
+                        <p class="stats-label">Categories</p>
+                    </div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="stats-content">
+                        <h3 class="stats-number" id="user-count">100+</h3>
+                        <p class="stats-label">Active Users</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Programming Section -->
+        <section class="category-section active" id="programming">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-code"></i> Programming AI Tools
+                    </h2>
+                    <p class="section-subtitle">AI assistants that help you write, debug, and understand code faster</p>
+                </div>
+                
+                <div class="tools-grid" id="programming-tools">
+                    <!-- Programming AI cards will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Image Generation Section -->
+        <section class="category-section" id="image">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-image"></i> Image Generation AI Tools
+                    </h2>
+                    <p class="section-subtitle">Transform your ideas into stunning visuals with AI-powered image generation</p>
+                </div>
+                
+                <div class="tools-grid" id="image-tools">
+                    <!-- Image AI cards will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <i class="fas fa-robot"></i>
+                    <h3>AI Tools Hub</h3>
+                    <p>Your gateway to AI-powered productivity</p>
+                </div>
+                <div class="footer-links">
+                    <a href="#programming">Programming Tools</a>
+                    <a href="#image">Image Generation</a>
+                    <a href="#" id="privacy-link">Privacy Policy</a>
+                    <a href="#" id="terms-link">Terms of Service</a>
+                </div>
+                <div class="footer-social">
+                    <p>Connect with us</p>
+                    <div class="social-icons">
+                        <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-github"></i></a>
+                        <a href="#" class="social-icon"><i class="fab fa-discord"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 AI Tools Hub. All rights reserved. Built with Firebase & ❤️</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- App Scripts -->
+    <script src="firebase.js"></script>
+    <script src="script.js"></script>
+</body>
+                  </html>
