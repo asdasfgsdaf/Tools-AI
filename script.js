@@ -1,383 +1,88 @@
-// ===== GLOBAL VARIABLES =====
-let currentCategory = 'programming';
-let aiTools = {
-    programming: [],
-    image: []
-};
+// ===== MAIN APPLICATION SCRIPT =====
 
-// ===== DOM ELEMENTS =====
+// Global variables
+let currentUser = null;
+
+// DOM Elements
 const elements = {
     // Navigation
-    navLinks: document.querySelectorAll('.nav-link'),
     mobileMenuBtn: document.getElementById('mobile-menu-btn'),
     mobileMenu: document.getElementById('mobile-menu'),
     mobileMenuClose: document.getElementById('mobile-menu-close'),
-    mobileNavLinks: document.querySelectorAll('.mobile-nav-link'),
     
     // Auth
     authContainer: document.getElementById('auth-container'),
     mobileAuthContainer: document.getElementById('mobile-auth-container'),
     
-    // Content
-    categorySections: document.querySelectorAll('.category-section'),
-    programmingTools: document.getElementById('programming-tools'),
-    imageTools: document.getElementById('image-tools'),
-    aiCount: document.getElementById('ai-count'),
-    userCount: document.getElementById('user-count'),
-    
-    // Footer
-    privacyLink: document.getElementById('privacy-link'),
-    termsLink: document.getElementById('terms-link')
+    // Language
+    languageToggle: document.getElementById('language-toggle'),
+    languageDropdown: document.getElementById('language-dropdown')
 };
 
-// ===== AI TOOLS DATA =====
-const aiData = {
-    programming: [
-        {
-            id: 'github-copilot',
-            name: 'GitHub Copilot',
-            description: 'Your AI pair programmer that suggests code and entire functions in real-time.',
-            icon: 'fab fa-github',
-            color: '#4078c0',
-            features: ['Code completion', 'Function generation', 'Test writing', 'Bug detection'],
-            tags: ['VSCode', 'JetBrains', 'AI Pair Programming'],
-            website: 'https://github.com/features/copilot',
-            category: 'programming',
-            status: 'active'
-        },
-        {
-            id: 'claude',
-            name: 'Claude',
-            description: 'Anthropic\'s AI assistant excelling at coding, analysis, and safe, helpful conversations.',
-            icon: 'fas fa-brain',
-            color: '#4a4a4a',
-            features: ['Code generation', 'Debugging', 'Code review', 'Documentation'],
-            tags: ['Anthropic', 'Code Analysis', 'API'],
-            website: 'https://www.anthropic.com/claude',
-            category: 'programming',
-            status: 'active'
-        },
-        {
-            id: 'deepseek',
-            name: 'DeepSeek',
-            description: 'Advanced coding assistant with deep understanding of multiple programming languages.',
-            icon: 'fas fa-search',
-            color: '#6366f1',
-            features: ['Multi-language support', 'Code optimization', 'Algorithm explanation', 'Best practices'],
-            tags: ['AI Assistant', 'Code Review', 'Learning'],
-            website: 'https://www.deepseek.com',
-            category: 'programming',
-            status: 'active'
-        },
-        {
-            id: 'gemini-programming',
-            name: 'Gemini (Programming)',
-            description: 'Google\'s AI specialized in coding tasks, from simple snippets to complex applications.',
-            icon: 'fab fa-google',
-            color: '#4285f4',
-            features: ['Code generation', 'Error fixing', 'Code translation', 'Optimization'],
-            tags: ['Google', 'Multi-language', 'Real-time'],
-            website: 'https://gemini.google.com',
-            category: 'programming',
-            status: 'active'
-        }
-    ],
-    image: [
-        {
-            id: 'gemini-image',
-            name: 'Gemini Image',
-            description: 'Generate stunning images from text descriptions with Google\'s advanced AI.',
-            icon: 'fas fa-image',
-            color: '#34a853',
-            features: ['Text-to-image', 'Image editing', 'Style transfer', 'High resolution'],
-            tags: ['Google', 'Image Generation', 'Creative'],
-            website: 'https://gemini.google.com',
-            category: 'image',
-            status: 'active'
-        },
-        {
-            id: 'nano-banana',
-            name: 'Nano Banana',
-            description: 'Lightweight yet powerful image generation AI with fast processing and creative outputs.',
-            icon: 'fas fa-bolt',
-            color: '#fbbc05',
-            features: ['Fast generation', 'Multiple styles', 'Custom parameters', 'Batch processing'],
-            tags: ['Lightweight', 'Fast', 'Creative'],
-            website: '#',
-            category: 'image',
-            status: 'active'
-        },
-        {
-            id: 'dall-e',
-            name: 'DALL-E',
-            description: 'Create realistic images and art from natural language descriptions.',
-            icon: 'fas fa-palette',
-            color: '#ea4335',
-            features: ['Art generation', 'Photo-realistic', 'Style mixing', 'Inpainting'],
-            tags: ['OpenAI', 'Creative', 'Advanced'],
-            website: 'https://openai.com/dall-e',
-            category: 'image',
-            status: 'active'
-        },
-        {
-            id: 'midjourney',
-            name: 'Midjourney',
-            description: 'Generate artistic and imaginative images with unique style and composition.',
-            icon: 'fas fa-magic',
-            color: '#1c1c1c',
-            features: ['Artistic style', 'Community', 'Iterative refinement', 'High quality'],
-            tags: ['Artistic', 'Community', 'Discord'],
-            website: 'https://www.midjourney.com',
-            category: 'image',
-            status: 'active'
-        }
-    ]
-};
-
-// ===== INITIALIZATION =====
+// Initialize application
 document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
 async function initApp() {
-    // Initialize AI tools data
-    aiTools = aiData;
+    // Initialize Firebase authentication
+    initFirebaseAuth();
     
-    // Update statistics
-    updateStats();
+    // Setup mobile menu
+    setupMobileMenu();
     
-    // Render AI tool cards
-    renderAITools();
+    // Setup language selector
+    setupLanguageSelector();
     
-    // Setup navigation
-    setupNavigation();
+    // Setup smooth scrolling for anchor links
+    setupSmoothScrolling();
     
-    // Setup authentication
-    setupAuthentication();
+    // Setup animations
+    setupAnimations();
     
-    // Setup event listeners
-    setupEventListeners();
-    
-    // Load initial category
-    loadCategory(currentCategory);
-    
-    // Update user count with random number (simulated)
-    updateUserCount();
+    // Update user stats
+    updateUserStats();
 }
 
-// ===== STATISTICS FUNCTIONS =====
-function updateStats() {
-    const totalAIs = aiData.programming.length + aiData.image.length;
-    elements.aiCount.textContent = totalAIs;
+// ===== FIREBASE AUTHENTICATION =====
+function initFirebaseAuth() {
+    authManager.addAuthListener(handleAuthStateChange);
 }
 
-function updateUserCount() {
-    // Simulate user count - in production, this would come from Firebase
-    const userCount = Math.floor(Math.random() * 500) + 100;
-    elements.userCount.textContent = `${userCount}+`;
-}
-
-// ===== RENDER FUNCTIONS =====
-function renderAITools() {
-    // Render programming tools
-    renderToolCards(aiTools.programming, elements.programmingTools);
-    
-    // Render image tools
-    renderToolCards(aiTools.image, elements.imageTools);
-}
-
-function renderToolCards(tools, container) {
-    container.innerHTML = '';
-    
-    tools.forEach(tool => {
-        const card = createToolCard(tool);
-        container.appendChild(card);
-    });
-}
-
-function createToolCard(tool) {
-    const card = document.createElement('div');
-    card.className = 'tool-card fade-in';
-    card.dataset.id = tool.id;
-    
-    // Create features HTML
-    const featuresHTML = tool.features.map(feature => 
-        `<span class="tool-tag">${feature}</span>`
-    ).join('');
-    
-    // Create tags HTML
-    const tagsHTML = tool.tags.map(tag => 
-        `<span class="tool-tag">${tag}</span>`
-    ).join('');
-    
-    card.innerHTML = `
-        <div class="tool-header">
-            <div class="tool-icon ${tool.category}" style="background: ${tool.color}">
-                <i class="${tool.icon}"></i>
-            </div>
-            <div class="tool-title">
-                <h3>${tool.name}</h3>
-                <span class="tool-badge">${tool.status === 'active' ? '🟢 Active' : '🔴 Inactive'}</span>
-            </div>
-        </div>
-        <div class="tool-content">
-            <p class="tool-description">${tool.description}</p>
-            <div class="tool-features">
-                <h4>Key Features</h4>
-                <div class="tool-tags">
-                    ${featuresHTML}
-                </div>
-            </div>
-        </div>
-        <div class="tool-footer">
-            <div class="tool-meta">
-                <i class="fas fa-tags"></i>
-                ${tagsHTML}
-            </div>
-            <button class="btn btn-primary open-chat-btn" data-type="${tool.category}">
-                <i class="fas fa-comment"></i> Open Chat
-            </button>
-        </div>
-    `;
-    
-    // Add click event to chat button
-    const chatBtn = card.querySelector('.open-chat-btn');
-    chatBtn.addEventListener('click', () => openChat(tool.category, tool.name));
-    
-    return card;
-}
-
-// ===== NAVIGATION FUNCTIONS =====
-function setupNavigation() {
-    // Desktop navigation
-    elements.navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const category = link.dataset.category;
-            loadCategory(category);
-            
-            // Update active state
-            elements.navLinks.forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
-            
-            // Update mobile menu active state
-            elements.mobileNavLinks.forEach(l => {
-                if (l.dataset.category === category) {
-                    l.classList.add('active');
-                } else {
-                    l.classList.remove('active');
-                }
-            });
-        });
-    });
-    
-    // Mobile navigation
-    elements.mobileMenuBtn.addEventListener('click', () => {
-        elements.mobileMenu.classList.add('open');
-    });
-    
-    elements.mobileMenuClose.addEventListener('click', () => {
-        elements.mobileMenu.classList.remove('open');
-    });
-    
-    elements.mobileNavLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const category = link.dataset.category;
-            loadCategory(category);
-            elements.mobileMenu.classList.remove('open');
-            
-            // Update active states
-            elements.navLinks.forEach(l => {
-                if (l.dataset.category === category) {
-                    l.classList.add('active');
-                } else {
-                    l.classList.remove('active');
-                }
-            });
-            
-            elements.mobileNavLinks.forEach(l => {
-                if (l.dataset.category === category) {
-                    l.classList.add('active');
-                } else {
-                    l.classList.remove('active');
-                }
-            });
-        });
-    });
-    
-    // Handle hash changes
-    window.addEventListener('hashchange', handleHashChange);
-}
-
-function handleHashChange() {
-    const hash = window.location.hash.substring(1);
-    if (hash === 'programming' || hash === 'image') {
-        loadCategory(hash);
-        
-        // Update active states
-        elements.navLinks.forEach(link => {
-            if (link.dataset.category === hash) {
-                link.classList.add('active');
-            } else {
-                link.classList.remove('active');
-            }
-        });
-        
-        elements.mobileNavLinks.forEach(link => {
-            if (link.dataset.category === hash) {
-                link.classList.add('active');
-            } else {
-                link.classList.remove('active');
-            }
-        });
-    }
-}
-
-function loadCategory(category) {
-    currentCategory = category;
-    
-    // Update URL hash
-    window.location.hash = category;
-    
-    // Show selected category, hide others
-    elements.categorySections.forEach(section => {
-        if (section.id === category) {
-            section.classList.add('active');
-        } else {
-            section.classList.remove('active');
-        }
-    });
-}
-
-// ===== AUTHENTICATION FUNCTIONS =====
-function setupAuthentication() {
-    // Listen for auth state changes
-    authManager.addAuthListener(updateAuthUI);
+function handleAuthStateChange(user) {
+    currentUser = user;
+    updateAuthUI(user);
 }
 
 function updateAuthUI(user) {
     const authHTML = user ? createAuthenticatedUI(user) : createUnauthenticatedUI();
-    elements.authContainer.innerHTML = authHTML;
-    elements.mobileAuthContainer.innerHTML = authHTML;
+    
+    // Update both desktop and mobile auth containers
+    if (elements.authContainer) {
+        elements.authContainer.innerHTML = authHTML;
+    }
+    
+    if (elements.mobileAuthContainer) {
+        elements.mobileAuthContainer.innerHTML = authHTML;
+    }
     
     // Add event listeners to new auth buttons
     if (user) {
-        const logoutBtn = elements.authContainer.querySelector('.logout-btn');
-        const mobileLogoutBtn = elements.mobileAuthContainer.querySelector('.logout-btn');
-        
-        if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
-        if (mobileLogoutBtn) mobileLogoutBtn.addEventListener('click', handleLogout);
+        const logoutBtns = document.querySelectorAll('.logout-btn');
+        logoutBtns.forEach(btn => {
+            btn.addEventListener('click', handleLogout);
+        });
     } else {
-        const googleBtn = elements.authContainer.querySelector('.google-login');
-        const githubBtn = elements.authContainer.querySelector('.github-login');
-        const mobileGoogleBtn = elements.mobileAuthContainer.querySelector('.google-login');
-        const mobileGithubBtn = elements.mobileAuthContainer.querySelector('.github-login');
+        const googleBtns = document.querySelectorAll('.google-login');
+        const githubBtns = document.querySelectorAll('.github-login');
         
-        if (googleBtn) googleBtn.addEventListener('click', () => handleLogin('google'));
-        if (githubBtn) githubBtn.addEventListener('click', () => handleLogin('github'));
-        if (mobileGoogleBtn) mobileGoogleBtn.addEventListener('click', () => handleLogin('google'));
-        if (mobileGithubBtn) mobileGithubBtn.addEventListener('click', () => handleLogin('github'));
+        googleBtns.forEach(btn => {
+            btn.addEventListener('click', () => handleLogin('google'));
+        });
+        
+        githubBtns.forEach(btn => {
+            btn.addEventListener('click', () => handleLogin('github'));
+        });
     }
 }
 
@@ -393,10 +98,10 @@ function createAuthenticatedUI(user) {
                     initials
                 }
             </div>
-            <span class="user-name">${displayName}</span>
+            <span class="user-name">${displayName.split(' ')[0]}</span>
         </div>
         <button class="btn btn-secondary logout-btn">
-            <i class="fas fa-sign-out-alt"></i> Logout
+            <i class="fas fa-sign-out-alt"></i>
         </button>
     `;
 }
@@ -404,11 +109,11 @@ function createAuthenticatedUI(user) {
 function createUnauthenticatedUI() {
     return `
         <div class="auth-buttons">
-            <button class="btn btn-secondary google-login" style="margin-right: 8px;">
-                <i class="fab fa-google"></i> Google
+            <button class="btn btn-secondary google-login">
+                <i class="fab fa-google"></i>
             </button>
             <button class="btn btn-secondary github-login">
-                <i class="fab fa-github"></i> GitHub
+                <i class="fab fa-github"></i>
             </button>
         </div>
     `;
@@ -446,40 +151,18 @@ async function handleLogout() {
     }
 }
 
-// ===== CHAT FUNCTIONS =====
-function openChat(type, toolName = '') {
-    const params = new URLSearchParams();
-    params.append('type', type);
-    if (toolName) {
-        params.append('tool', encodeURIComponent(toolName));
+// ===== MOBILE MENU =====
+function setupMobileMenu() {
+    if (!elements.mobileMenuBtn || !elements.mobileMenu || !elements.mobileMenuClose) {
+        return;
     }
     
-    // Navigate to chat page
-    window.location.href = `chat.html?${params.toString()}`;
-}
-
-// ===== EVENT LISTENERS =====
-function setupEventListeners() {
-    // Privacy and Terms links
-    if (elements.privacyLink) {
-        elements.privacyLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showNotification('Privacy policy will be available soon!', 'info');
-        });
-    }
+    elements.mobileMenuBtn.addEventListener('click', () => {
+        elements.mobileMenu.classList.add('open');
+    });
     
-    if (elements.termsLink) {
-        elements.termsLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showNotification('Terms of service will be available soon!', 'info');
-        });
-    }
-    
-    // Handle Escape key for mobile menu
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && elements.mobileMenu.classList.contains('open')) {
-            elements.mobileMenu.classList.remove('open');
-        }
+    elements.mobileMenuClose.addEventListener('click', () => {
+        elements.mobileMenu.classList.remove('open');
     });
     
     // Close mobile menu when clicking outside
@@ -490,16 +173,112 @@ function setupEventListeners() {
             elements.mobileMenu.classList.remove('open');
         }
     });
+    
+    // Close mobile menu on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && elements.mobileMenu.classList.contains('open')) {
+            elements.mobileMenu.classList.remove('open');
+        }
+    });
 }
 
-// ===== UTILITY FUNCTIONS =====
-function showNotification(message, type = 'info') {
-    // Remove existing notification
-    const existingNotification = document.querySelector('.notification');
-    if (existingNotification) {
-        existingNotification.remove();
+// ===== LANGUAGE SELECTOR =====
+function setupLanguageSelector() {
+    if (!elements.languageToggle || !elements.languageDropdown) {
+        return;
     }
     
+    elements.languageToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        elements.languageDropdown.classList.toggle('show');
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+        elements.languageDropdown.classList.remove('show');
+    });
+}
+
+// ===== SMOOTH SCROLLING =====
+function setupSmoothScrolling() {
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            const href = this.getAttribute('href');
+            
+            // Skip if it's just "#"
+            if (href === '#') return;
+            
+            // Skip if it's a language selector
+            if (this.classList.contains('language-option') || 
+                this.classList.contains('mobile-lang-option')) {
+                return;
+            }
+            
+            // Handle mobile menu links
+            if (elements.mobileMenu && elements.mobileMenu.classList.contains('open')) {
+                elements.mobileMenu.classList.remove('open');
+            }
+            
+            // Get target element
+            const targetElement = document.querySelector(href);
+            if (!targetElement) return;
+            
+            e.preventDefault();
+            
+            // Scroll to target
+            window.scrollTo({
+                top: targetElement.offsetTop - 80,
+                behavior: 'smooth'
+            });
+        });
+    });
+}
+
+// ===== ANIMATIONS =====
+function setupAnimations() {
+    // Add fade-in animation to elements on scroll
+    const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('fade-in');
+            }
+        });
+    }, observerOptions);
+    
+    // Observe all feature cards, steps, and other animatable elements
+    document.querySelectorAll('.feature-card, .step, .cta-card').forEach(el => {
+        observer.observe(el);
+    });
+}
+
+// ===== STATISTICS =====
+function updateUserStats() {
+    // Simulate updating user stats
+    // In production, this would come from Firebase
+    setTimeout(() => {
+        const stats = {
+            users: Math.floor(Math.random() * 5000) + 10000,
+            chats: Math.floor(Math.random() * 100000) + 500000,
+            satisfaction: (Math.random() * 0.5 + 99.3).toFixed(1)
+        };
+        
+        // Update CTA stats
+        document.querySelectorAll('.cta-stat-number').forEach((el, index) => {
+            if (index === 0) el.textContent = `${stats.users.toLocaleString()}+`;
+            if (index === 1) el.textContent = `${stats.chats.toLocaleString()}+`;
+            if (index === 2) el.textContent = `${stats.satisfaction}%`;
+        });
+    }, 1000);
+}
+
+// ===== NOTIFICATIONS =====
+function showNotification(message, type = 'info') {
     // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
@@ -512,86 +291,73 @@ function showNotification(message, type = 'info') {
     
     notification.innerHTML = `
         <i class="${icon}"></i>
-        <span>${message}</span>
-        <button class="notification-close"><i class="fas fa-times"></i></button>
+        <div class="notification-content">
+            <div class="notification-title">${languageManager.translate(`notification.${type}`)}</div>
+            <div class="notification-message">${message}</div>
+        </div>
+        <button class="notification-close">
+            <i class="fas fa-times"></i>
+        </button>
     `;
     
-    // Add styles
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#6366f1'};
-        color: white;
-        padding: 12px 16px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        animation: slideIn 0.3s ease;
-    `;
+    // Create notifications container if it doesn't exist
+    let container = document.getElementById('notifications-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'notifications-container';
+        document.body.appendChild(container);
+    }
     
-    // Add close button event
+    // Add notification to container
+    container.appendChild(notification);
+    
+    // Add close event
     const closeBtn = notification.querySelector('.notification-close');
     closeBtn.addEventListener('click', () => {
-        notification.style.animation = 'slideOut 0.3s ease forwards';
+        notification.style.animation = 'slideOutRight 0.3s ease forwards';
         setTimeout(() => notification.remove(), 300);
     });
-    
-    // Add keyframe animations
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-        .notification-close {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            padding: 0;
-            font-size: 14px;
-        }
-    `;
-    document.head.appendChild(style);
     
     // Auto remove after 5 seconds
     setTimeout(() => {
         if (notification.parentNode) {
-            notification.style.animation = 'slideOut 0.3s ease forwards';
+            notification.style.animation = 'slideOutRight 0.3s ease forwards';
             setTimeout(() => notification.remove(), 300);
         }
     }, 5000);
-    
-    document.body.appendChild(notification);
 }
 
-// ===== PAGE TRANSITIONS =====
-function addPageTransition() {
-    document.body.style.opacity = '0';
-    document.body.style.transition = 'opacity 0.3s ease';
-    
-    window.addEventListener('load', () => {
-        document.body.style.opacity = '1';
-    });
+// Add slideOutRight animation
+if (!document.querySelector('#notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
-// Initialize page transition
-addPageTransition();
+// ===== UTILITY FUNCTIONS =====
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
-// Export functions for debugging
+// Export for debugging
 window.app = {
-    openChat,
-    showNotification,
+    languageManager,
     authManager,
-    aiTools
+    showNotification
 };
 
 console.log('Main application initialized');
