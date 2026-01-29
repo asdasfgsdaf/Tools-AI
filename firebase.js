@@ -1,11 +1,14 @@
+// ===== FIREBASE CONFIGURATION =====
+// IMPORTANT: Replace with your own Firebase config from Firebase Console
 const firebaseConfig = {
-    apiKey: "AIzaSyBNO9MzGbWPl6SqqZP0qD4HiJNxdbu9xlM",
-    authDomain: "tools-ai-1948b.firebaseapp.com",
-    projectId: "tools-ai-1948b",
-    storageBucket: "tools-ai-1948b.firebasestorage.app",
-    messagingSenderId: "656888037304",
-    appId: "1:656888037304:web:c7f398b589e58c9ab0594d"
-  };
+    apiKey: "YOUR_API_KEY_HERE",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID",
+    measurementId: "YOUR_MEASUREMENT_ID"
+};
 
 // ===== FIREBASE INITIALIZATION =====
 // Initialize Firebase
@@ -19,7 +22,7 @@ db.enablePersistence()
         console.error("Firestore persistence failed:", err);
     });
 
-// ===== AUTHENTICATION FUNCTIONS =====
+// ===== AUTHENTICATION MANAGER =====
 class AuthManager {
     constructor() {
         this.user = null;
@@ -106,11 +109,17 @@ class AuthManager {
                     photoURL: photoURL || '',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                    preferences: {
+                        language: 'en',
+                        theme: 'dark',
+                        defaultModel: 'auto'
+                    },
                     stats: {
                         totalChats: 0,
                         totalMessages: 0,
                         programmingChats: 0,
-                        imageChats: 0
+                        imageChats: 0,
+                        generalChats: 0
                     }
                 });
                 
@@ -153,14 +162,34 @@ class AuthManager {
         }
     }
 
+    // Update user preferences
+    async updateUserPreferences(userId, preferences) {
+        try {
+            const userRef = db.collection('users').doc(userId);
+            await userRef.update({
+                'preferences': preferences,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return { success: true };
+        } catch (error) {
+            console.error('Error updating user preferences:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
     // Update user stats
     async updateUserStats(userId, statsUpdate) {
         try {
             const userRef = db.collection('users').doc(userId);
-            await userRef.update({
-                [`stats.${statsUpdate.field}`]: firebase.firestore.FieldValue.increment(statsUpdate.value),
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            
+            // Prepare update object
+            const updateObj = {};
+            Object.keys(statsUpdate).forEach(key => {
+                updateObj[`stats.${key}`] = firebase.firestore.FieldValue.increment(statsUpdate[key]);
             });
+            updateObj.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+            
+            await userRef.update(updateObj);
             return { success: true };
         } catch (error) {
             console.error('Error updating user stats:', error);
@@ -169,7 +198,7 @@ class AuthManager {
     }
 }
 
-// ===== FIRESTORE CHAT FUNCTIONS =====
+// ===== CHAT MANAGER =====
 class ChatManager {
     constructor() {
         this.currentChatId = null;
@@ -180,14 +209,23 @@ class ChatManager {
     // Create a new chat session
     async createChat(userId, chatType, initialMessage = null) {
         try {
+            // Determine chat title from first message
+            let chatTitle = `${chatType.charAt(0).toUpperCase() + chatType.slice(1)} Chat`;
+            if (initialMessage && initialMessage.text) {
+                const shortText = initialMessage.text.substring(0, 30);
+                chatTitle = shortText + (initialMessage.text.length > 30 ? '...' : '');
+            }
+
             const chatData = {
                 userId: userId,
                 type: chatType,
-                title: `${chatType.charAt(0).toUpperCase() + chatType.slice(1)} Chat`,
+                title: chatTitle,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 messages: initialMessage ? [initialMessage] : [],
-                messageCount: initialMessage ? 1 : 0
+                messageCount: initialMessage ? 1 : 0,
+                lastMessage: initialMessage ? initialMessage.text.substring(0, 100) : '',
+                modelUsed: initialMessage?.model || 'auto'
             };
 
             const chatRef = await db.collection('chats').add(chatData);
@@ -196,21 +234,9 @@ class ChatManager {
             // Update user stats
             const authManager = new AuthManager();
             await authManager.updateUserStats(userId, {
-                field: 'totalChats',
-                value: 1
+                totalChats: 1,
+                [`${chatType}Chats`]: 1
             });
-
-            if (chatType === 'programming') {
-                await authManager.updateUserStats(userId, {
-                    field: 'programmingChats',
-                    value: 1
-                });
-            } else if (chatType === 'image') {
-                await authManager.updateUserStats(userId, {
-                    field: 'imageChats',
-                    value: 1
-                });
-            }
 
             return { 
                 success: true, 
@@ -290,7 +316,8 @@ class ChatManager {
                 messages: firebase.firestore.FieldValue.arrayUnion(message),
                 messageCount: firebase.firestore.FieldValue.increment(1),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastMessage: message.text.substring(0, 100) // Store preview
+                lastMessage: message.text.substring(0, 100),
+                modelUsed: message.model || 'auto'
             });
 
             // Update user stats
@@ -298,8 +325,7 @@ class ChatManager {
             const user = authManager.getCurrentUser();
             if (user) {
                 await authManager.updateUserStats(user.uid, {
-                    field: 'totalMessages',
-                    value: 1
+                    totalMessages: 1
                 });
             }
 
@@ -327,34 +353,23 @@ class ChatManager {
     // Delete a chat
     async deleteChat(chatId, userId) {
         try {
+            const chatDoc = await db.collection('chats').doc(chatId).get();
+            
+            if (!chatDoc.exists) {
+                return { success: false, error: 'Chat not found' };
+            }
+
+            const chatData = chatDoc.data();
+            
+            // Delete the chat
             await db.collection('chats').doc(chatId).delete();
             
             // Update user stats
             const authManager = new AuthManager();
-            const userData = await authManager.getUserData(userId);
-            
-            if (userData.success) {
-                const chatDoc = await db.collection('chats').doc(chatId).get();
-                if (chatDoc.exists) {
-                    const chatData = chatDoc.data();
-                    await authManager.updateUserStats(userId, {
-                        field: 'totalChats',
-                        value: -1
-                    });
-
-                    if (chatData.type === 'programming') {
-                        await authManager.updateUserStats(userId, {
-                            field: 'programmingChats',
-                            value: -1
-                        });
-                    } else if (chatData.type === 'image') {
-                        await authManager.updateUserStats(userId, {
-                            field: 'imageChats',
-                            value: -1
-                        });
-                    }
-                }
-            }
+            await authManager.updateUserStats(userId, {
+                totalChats: -1,
+                [`${chatData.type}Chats`]: -1
+            });
 
             return { success: true };
         } catch (error) {
@@ -369,7 +384,8 @@ class ChatManager {
             await db.collection('chats').doc(chatId).update({
                 messages: [],
                 messageCount: 0,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastMessage: ''
             });
             return { success: true };
         } catch (error) {
@@ -486,7 +502,8 @@ class FirebaseUtils {
     static getChatTypeIcon(chatType) {
         const icons = {
             programming: 'fas fa-code',
-            image: 'fas fa-image'
+            image: 'fas fa-image',
+            general: 'fas fa-comment'
         };
         return icons[chatType] || 'fas fa-comment';
     }
@@ -495,15 +512,23 @@ class FirebaseUtils {
     static getChatTypeColor(chatType) {
         const colors = {
             programming: '#3b82f6',
-            image: '#10b981'
+            image: '#10b981',
+            general: '#6366f1'
         };
         return colors[chatType] || '#6366f1';
     }
 
-    // Validate email format
-    static isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
+    // Get model icon
+    static getModelIcon(model) {
+        const icons = {
+            claude: 'fas fa-brain',
+            deepseek: 'fas fa-search',
+            copilot: 'fab fa-github',
+            gemini: 'fab fa-google',
+            nanobanana: 'fas fa-bolt',
+            auto: 'fas fa-magic'
+        };
+        return icons[model] || 'fas fa-robot';
     }
 }
 
@@ -518,5 +543,6 @@ window.firebaseAuth = auth;
 window.firebaseDb = db;
 window.authManager = authManager;
 window.chatManager = chatManager;
+window.firebaseUtils = firebaseUtils;
 
 console.log('Firebase initialized successfully');
