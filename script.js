@@ -571,36 +571,7 @@ async function sendMessage() {
     }
 }
         
-    } catch (error) {
-        console.error('Erro ao obter resposta:', error);
-        removeTypingIndicator();
-        showNotification('Erro ao obter resposta da IA', 'error');
-        
-        // Fallback para resposta simulada
-        setTimeout(() => {
-            const fallbackResponse = generateAIResponse(userMessage, selectedModel);
-            
-            const fallbackMessage = {
-                id: 'ai_fallback_' + Date.now(),
-                text: fallbackResponse,
-                sender: 'ai',
-                timestamp: new Date().toISOString(),
-                model: selectedModel,
-                isRealAPI: false
-            };
-            
-            addMessageToUI(fallbackMessage);
-            
-            const currentChat = chats.find(c => c.id === currentChatId);
-            if (currentChat) {
-                currentChat.messages.push(fallbackMessage);
-                currentChat.updatedAt = new Date().toISOString();
-                saveChats();
-                renderChatHistory();
-            }
-        }, 500);
-    }
-}
+
 
 async function generateSimulatedResponse(userMessage) {
     return new Promise(resolve => {
