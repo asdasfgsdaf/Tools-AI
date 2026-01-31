@@ -2,7 +2,7 @@
 let currentChatId = null;
 let chats = [];
 let selectedModel = 'auto';
-let useRealAPI = false;
+let useRealAPI = true;
 let apiManager = window.apiManager;
 
 // ===== ELEMENTOS DOM =====
@@ -470,7 +470,8 @@ async function sendMessage() {
     await getAIResponse(messageText);
 }
 
-async function getAIResponse(userMessage) {
+
+            async function getAIResponse(userMessage) {
     console.log('Obtendo resposta para:', userMessage.substring(0, 50));
     
     // Mostrar indicador de digitação
@@ -487,27 +488,23 @@ async function getAIResponse(userMessage) {
                 console.log('Usando API real:', activeProvider.name);
                 isRealAPI = true;
                 
-                // Tempo de resposta baseado no provedor
-                const delay = getResponseDelay(selectedModel);
+                // Usar API REAL sem fallback para simulado
+                try {
+                    response = await apiManager.sendRequest(userMessage);
+                } catch (apiError) {
+                    console.error('Erro na API real:', apiError);
+                    // Se API falhar, mostra erro direto
+                    throw new Error(`API Error: ${apiError.message}`);
+                }
                 
-                response = await new Promise((resolve, reject) => {
-                    setTimeout(async () => {
-                        try {
-                            const apiResponse = await apiManager.sendRequest(userMessage);
-                            resolve(apiResponse);
-                        } catch (error) {
-                            console.error('Erro na API real:', error);
-                            // Fallback para resposta simulada
-                            resolve(generateAIResponse(userMessage, selectedModel));
-                        }
-                    }, delay);
-                });
             } else {
                 console.log('Nenhuma API ativa, usando resposta simulada');
+                isRealAPI = false;
                 response = await generateSimulatedResponse(userMessage);
             }
         } else {
             console.log('Usando resposta simulada');
+            isRealAPI = false;
             response = await generateSimulatedResponse(userMessage);
         }
         
@@ -537,6 +534,42 @@ async function getAIResponse(userMessage) {
             saveChats();
             renderChatHistory();
         }
+        
+    } catch (error) {
+        console.error('Erro ao obter resposta:', error);
+        removeTypingIndicator();
+        
+        // Mostrar erro específico
+        const errorMessage = error.message.includes('API Error') 
+            ? `Erro na API: ${error.message.replace('API Error: ', '')}`
+            : 'Erro ao obter resposta da IA';
+            
+        showNotification(errorMessage, 'error');
+        
+        // Opcional: adicionar mensagem de erro no chat
+        const errorResponse = `❌ **Erro na API DeepSeek:**\n\n${error.message}\n\nTente novamente ou verifique sua API Key.`;
+        
+        const errorMessageObj = {
+            id: 'ai_error_' + Date.now(),
+            text: errorResponse,
+            sender: 'ai',
+            timestamp: new Date().toISOString(),
+            model: selectedModel,
+            isRealAPI: false,
+            isError: true
+        };
+        
+        addMessageToUI(errorMessageObj);
+        
+        const currentChat = chats.find(c => c.id === currentChatId);
+        if (currentChat) {
+            currentChat.messages.push(errorMessageObj);
+            currentChat.updatedAt = new Date().toISOString();
+            saveChats();
+            renderChatHistory();
+        }
+    }
+}
         
     } catch (error) {
         console.error('Erro ao obter resposta:', error);
