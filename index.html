@@ -1,503 +1,156 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuraLink AI - Your Universal Programming & Image Generation Assistant</title>
+    <title>NeuraLink AI - Seu Assistente de Programação e Imagens</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icons/6.6.6/css/flag-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <div class="logo-icon">
-                    <i class="fas fa-brain-circuit"></i>
-                </div>
-                <div class="logo-text">
-                    <h1>NeuraLink<span class="logo-highlight">AI</span></h1>
-                    <p class="logo-subtitle">Unified Intelligence Platform</p>
-                </div>
-            </div>
-            
-            <div class="nav-center">
-                <a href="#features" class="nav-link">
-                    <i class="fas fa-stars"></i> Features
-                </a>
-                <a href="#pricing" class="nav-link">
-                    <i class="fas fa-tags"></i> Pricing
-                </a>
-                <a href="chat.html" class="nav-link cta-link">
-                    <i class="fas fa-rocket"></i> Launch Chat
-                </a>
-            </div>
-            
-            <div class="nav-right">
-                <div class="language-selector">
-                    <button class="language-btn" id="language-toggle">
-                        <span class="fi fi-us"></span>
-                        <span>EN</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="language-dropdown" id="language-dropdown">
-                        <div class="language-header">
-                            <i class="fas fa-globe"></i>
-                            <span>Select Language</span>
-                        </div>
-                        <a href="#" class="language-option" data-lang="en">
-                            <span class="fi fi-us"></span>
-                            <span>English</span>
-                            <i class="fas fa-check"></i>
-                        </a>
-                        <a href="#" class="language-option" data-lang="pt">
-                            <span class="fi fi-br"></span>
-                            <span>Português</span>
-                        </a>
-                        <a href="#" class="language-option" data-lang="es">
-                            <span class="fi fi-es"></span>
-                            <span>Español</span>
-                        </a>
-                        <a href="#" class="language-option" data-lang="fr">
-                            <span class="fi fi-fr"></span>
-                            <span>Français</span>
-                        </a>
-                        <a href="#" class="language-option" data-lang="de">
-                            <span class="fi fi-de"></span>
-                            <span>Deutsch</span>
-                        </a>
-                    </div>
-                </div>
-                
-                <div class="nav-auth" id="auth-container">
-                    <!-- Auth buttons will be inserted here -->
-                </div>
-                
-                <button class="mobile-menu-btn" id="mobile-menu-btn">
-                    <i class="fas fa-bars"></i>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" id="new-chat">
+                    <i class="fas fa-plus"></i>
+                    Novo chat
+                </button>
+                <button class="sidebar-toggle" id="sidebar-toggle">
+                    <i class="fas fa-chevron-left"></i>
                 </button>
             </div>
-        </div>
-    </nav>
+            
+            <div class="chat-history" id="chat-history">
+                <!-- Histórico será carregado aqui -->
+                <div class="empty-history">
+                    <i class="fas fa-comments"></i>
+                    <p>Nenhum histórico ainda</p>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">Visitante</span>
+                        <span class="user-status">Online</span>
+                    </div>
+                </div>
+                <div class="sidebar-actions">
+                    <button class="action-btn" title="Configurações">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
 
-    <!-- Mobile Menu -->
-    <div class="mobile-menu" id="mobile-menu">
-        <div class="mobile-menu-header">
-            <div class="mobile-logo">
-                <i class="fas fa-brain-circuit"></i>
-                <h3>NeuraLink<span class="logo-highlight">AI</span></h3>
-            </div>
-            <button class="mobile-menu-close" id="mobile-menu-close">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div class="mobile-menu-content">
-            <a href="#hero" class="mobile-nav-link">
-                <i class="fas fa-home"></i> Home
-            </a>
-            <a href="#features" class="mobile-nav-link">
-                <i class="fas fa-stars"></i> Features
-            </a>
-            <a href="#pricing" class="mobile-nav-link">
-                <i class="fas fa-tags"></i> Pricing
-            </a>
-            <a href="#how-it-works" class="mobile-nav-link">
-                <i class="fas fa-play-circle"></i> How it Works
-            </a>
-            <a href="chat.html" class="mobile-nav-link cta-link">
-                <i class="fas fa-rocket"></i> Launch Chat
-            </a>
-            
-            <div class="mobile-language-selector">
-                <div class="mobile-language-header">
-                    <i class="fas fa-globe"></i>
-                    <span>Language</span>
+        <!-- Main Chat Area -->
+        <main class="chat-main">
+            <!-- Chat Header -->
+            <header class="chat-header">
+                <div class="header-left">
+                    <button class="menu-btn" id="menu-btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="chat-title">NeuraLink AI</h1>
                 </div>
-                <div class="mobile-language-options">
-                    <button class="mobile-lang-option active" data-lang="en">
-                        <span class="fi fi-us"></span> English
-                    </button>
-                    <button class="mobile-lang-option" data-lang="pt">
-                        <span class="fi fi-br"></span> Português
-                    </button>
-                    <button class="mobile-lang-option" data-lang="es">
-                        <span class="fi fi-es"></span> Español
-                    </button>
-                    <button class="mobile-lang-option" data-lang="fr">
-                        <span class="fi fi-fr"></span> Français
-                    </button>
-                    <button class="mobile-lang-option" data-lang="de">
-                        <span class="fi fi-de"></span> Deutsch
-                    </button>
+                <div class="header-right">
+                    <div class="model-selector">
+                        <span class="model-label">Modelo:</span>
+                        <select id="model-select">
+                            <option value="auto">Auto (Recomendado)</option>
+                            <option value="claude">Claude</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="copilot">GitHub Copilot</option>
+                            <option value="gemini">Gemini</option>
+                            <option value="nanobanana">NanoBanana</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chat-messages">
+                <!-- Mensagem de boas-vindas -->
+                <div class="message welcome-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <h2>Olá! Eu sou o NeuraLink AI</h2>
+                        <p>Seu assistente unificado para programação e geração de imagens.</p>
+                        <div class="welcome-features">
+                            <div class="feature">
+                                <i class="fas fa-code"></i>
+                                <span>Programação com Claude, DeepSeek e Copilot</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-image"></i>
+                                <span>Imagens com Gemini e NanoBanana</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-bolt"></i>
+                                <span>Seleção automática do melhor modelo</span>
+                            </div>
+                        </div>
+                        <div class="quick-prompts">
+                            <h4>Experimente perguntar:</h4>
+                            <div class="prompt-grid">
+                                <button class="prompt-btn" data-prompt="Crie um componente React para login">
+                                    <i class="fab fa-react"></i>
+                                    Componente React
+                                </button>
+                                <button class="prompt-btn" data-prompt="Gere uma imagem de uma cidade futurista">
+                                    <i class="fas fa-city"></i>
+                                    Cidade futurista
+                                </button>
+                                <button class="prompt-btn" data-prompt="Explique async/await em JavaScript">
+                                    <i class="fab fa-js"></i>
+                                    Async/Await
+                                </button>
+                                <button class="prompt-btn" data-prompt="Como otimizar consultas SQL?">
+                                    <i class="fas fa-database"></i>
+                                    Otimizar SQL
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="mobile-auth-container" id="mobile-auth-container">
-                <!-- Mobile auth buttons will be inserted here -->
+
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="chat-input" 
+                        placeholder="Digite sua mensagem aqui... (Shift+Enter para nova linha)"
+                        rows="1"
+                    ></textarea>
+                    <div class="input-actions">
+                        <button class="action-btn" id="attach-btn" title="Anexar arquivo">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <button class="send-btn" id="send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="input-info">
+                    <span class="char-count" id="char-count">0/2000</span>
+                    <span class="model-info" id="current-model-info">Modelo: Auto</span>
+                </div>
             </div>
-        </div>
+        </main>
+
+        <!-- Mobile Sidebar Overlay -->
+        <div class="mobile-overlay" id="mobile-overlay"></div>
     </div>
 
-    <!-- Hero Section -->
-    <section class="hero" id="hero">
-        <div class="hero-background">
-            <div class="gradient-orb"></div>
-            <div class="gradient-orb orb-2"></div>
-        </div>
-        
-        <div class="container">
-            <div class="hero-content">
-                <div class="hero-badge">
-                    <i class="fas fa-bolt"></i>
-                    <span>All AI Models Unified</span>
-                </div>
-                
-                <h1 class="hero-title">
-                    One Platform.
-                    <span class="gradient-text">Every AI.</span>
-                </h1>
-                
-                <h2 class="hero-subtitle">
-                    Claude, DeepSeek, GitHub Copilot, Gemini & NanoBanana
-                    <span class="hero-highlight">unified in one intelligent assistant</span>
-                </h2>
-                
-                <p class="hero-description">
-                    From code generation to image creation, NeuraLink AI intelligently routes your requests 
-                    to the perfect AI model. No switching between tools. No context loss. Just pure productivity.
-                </p>
-                
-                <div class="hero-actions">
-                    <a href="chat.html" class="btn btn-primary btn-lg">
-                        <i class="fas fa-comment-dots"></i>
-                        Start Chat Now
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                    <a href="#how-it-works" class="btn btn-outline btn-lg">
-                        <i class="fas fa-play-circle"></i>
-                        Watch Demo
-                    </a>
-                </div>
-                
-                <div class="hero-stats">
-                    <div class="stat-item">
-                        <div class="stat-number">5</div>
-                        <div class="stat-label">AI Models</div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <div class="stat-number">5</div>
-                        <div class="stat-label">Languages</div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat-item">
-                        <div class="stat-number">∞</div>
-                        <div class="stat-label">Possibilities</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="hero-visual">
-                <div class="chat-preview">
-                    <div class="chat-message user">
-                        <div class="message-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="message-content">
-                            Generate a React component for a login form with validation
-                        </div>
-                    </div>
-                    <div class="chat-message ai">
-                        <div class="message-avatar">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <div class="message-content">
-                            Here's a complete React login component with validation...
-                        </div>
-                        <div class="message-model">
-                            <i class="fab fa-react"></i> Claude
-                        </div>
-                    </div>
-                    <div class="chat-message user">
-                        <div class="message-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="message-content">
-                            Now create an image of a futuristic dashboard for this
-                        </div>
-                    </div>
-                    <div class="chat-message ai">
-                        <div class="message-avatar">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <div class="message-content">
-                            Generating image of futuristic admin dashboard...
-                        </div>
-                        <div class="message-model">
-                            <i class="fas fa-image"></i> Gemini
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="features" id="features">
-        <div class="container">
-            <div class="section-header">
-                <div class="section-badge">
-                    <i class="fas fa-stars"></i>
-                    Why Choose NeuraLink AI
-                </div>
-                <h2 class="section-title">
-                    Intelligent AI <span class="gradient-text">Routing</span>
-                </h2>
-                <p class="section-subtitle">
-                    We analyze your request and automatically select the best AI model for the task
-                </p>
-            </div>
-            
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-code"></i>
-                    </div>
-                    <h3 class="feature-title">Programming</h3>
-                    <p class="feature-description">
-                        Automatically routed to Claude, DeepSeek, or Copilot based on code complexity
-                    </p>
-                    <div class="feature-models">
-                        <span class="model-tag">
-                            <i class="fab fa-github"></i> Copilot
-                        </span>
-                        <span class="model-tag">
-                            <i class="fas fa-brain"></i> Claude
-                        </span>
-                        <span class="model-tag">
-                            <i class="fas fa-search"></i> DeepSeek
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-image"></i>
-                    </div>
-                    <h3 class="feature-title">Image Generation</h3>
-                    <p class="feature-description">
-                        Gemini for realistic images, NanoBanana for creative and artistic styles
-                    </p>
-                    <div class="feature-models">
-                        <span class="model-tag">
-                            <i class="fab fa-google"></i> Gemini
-                        </span>
-                        <span class="model-tag">
-                            <i class="fas fa-bolt"></i> NanoBanana
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-language"></i>
-                    </div>
-                    <h3 class="feature-title">Multi-Language</h3>
-                    <p class="feature-description">
-                        Full support in 5 languages. Chat in your native language seamlessly
-                    </p>
-                    <div class="feature-languages">
-                        <span class="fi fi-us"></span>
-                        <span class="fi fi-br"></span>
-                        <span class="fi fi-es"></span>
-                        <span class="fi fi-fr"></span>
-                        <span class="fi fi-de"></span>
-                    </div>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-history"></i>
-                    </div>
-                    <h3 class="feature-title">Context Memory</h3>
-                    <p class="feature-description">
-                        Maintains conversation context across different AI models and sessions
-                    </p>
-                    <div class="feature-cta">
-                        <i class="fas fa-sync-alt"></i> Seamless Switching
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works -->
-    <section class="how-it-works" id="how-it-works">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">
-                    How <span class="gradient-text">NeuraLink AI</span> Works
-                </h2>
-                <p class="section-subtitle">
-                    Three simple steps to supercharge your productivity
-                </p>
-            </div>
-            
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">01</div>
-                    <div class="step-content">
-                        <h3>Type Your Request</h3>
-                        <p>Simply type what you need - code, images, explanations, or creative ideas</p>
-                    </div>
-                    <div class="step-visual">
-                        <i class="fas fa-keyboard"></i>
-                    </div>
-                </div>
-                
-                <div class="step">
-                    <div class="step-number">02</div>
-                    <div class="step-content">
-                        <h3>AI Model Selection</h3>
-                        <p>Our system analyzes your request and picks the perfect AI model automatically</p>
-                    </div>
-                    <div class="step-visual">
-                        <i class="fas fa-brain"></i>
-                    </div>
-                </div>
-                
-                <div class="step">
-                    <div class="step-number">03</div>
-                    <div class="step-content">
-                        <h3>Get Perfect Results</h3>
-                        <p>Receive optimized responses from the best AI for your specific task</p>
-                    </div>
-                    <div class="step-visual">
-                        <i class="fas fa-rocket"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta-section">
-        <div class="container">
-            <div class="cta-card">
-                <div class="cta-content">
-                    <h2>Ready to Experience Unified AI?</h2>
-                    <p>Join thousands of developers and creatives using NeuraLink AI</p>
-                    
-                    <div class="cta-stats">
-                        <div class="cta-stat">
-                            <div class="cta-stat-number">10k+</div>
-                            <div class="cta-stat-label">Active Users</div>
-                        </div>
-                        <div class="cta-stat">
-                            <div class="cta-stat-number">500k+</div>
-                            <div class="cta-stat-label">Chats Processed</div>
-                        </div>
-                        <div class="cta-stat">
-                            <div class="cta-stat-number">99.8%</div>
-                            <div class="cta-stat-label">Satisfaction Rate</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="cta-actions">
-                    <a href="chat.html" class="btn btn-primary btn-xl">
-                        <i class="fas fa-rocket"></i>
-                        Launch NeuraLink AI
-                    </a>
-                    <p class="cta-note">
-                        <i class="fas fa-lock"></i>
-                        Secure & Private • No credit card required
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-brand">
-                    <div class="footer-logo">
-                        <i class="fas fa-brain-circuit"></i>
-                        <div>
-                            <h3>NeuraLink<span class="logo-highlight">AI</span></h3>
-                            <p>Unified Intelligence Platform</p>
-                        </div>
-                    </div>
-                    <p class="footer-tagline">
-                        One platform. Every AI. Infinite possibilities.
-                    </p>
-                    <div class="footer-social">
-                        <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
-                        <a href="#" class="social-icon"><i class="fab fa-github"></i></a>
-                        <a href="#" class="social-icon"><i class="fab fa-discord"></i></a>
-                        <a href="#" class="social-icon"><i class="fab fa-linkedin"></i></a>
-                    </div>
-                </div>
-                
-                <div class="footer-links">
-                    <div class="footer-column">
-                        <h4>Product</h4>
-                        <a href="#features">Features</a>
-                        <a href="#how-it-works">How it Works</a>
-                        <a href="#pricing">Pricing</a>
-                        <a href="chat.html">Web Chat</a>
-                    </div>
-                    
-                    <div class="footer-column">
-                        <h4>Resources</h4>
-                        <a href="#">Documentation</a>
-                        <a href="#">API Reference</a>
-                        <a href="#">Blog</a>
-                        <a href="#">Community</a>
-                    </div>
-                    
-                    <div class="footer-column">
-                        <h4>Legal</h4>
-                        <a href="#">Privacy Policy</a>
-                        <a href="#">Terms of Service</a>
-                        <a href="#">Cookie Policy</a>
-                        <a href="#">GDPR</a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="footer-bottom">
-                <div class="footer-copyright">
-                    © 2024 NeuraLink AI. All rights reserved.
-                </div>
-                <div class="footer-extra">
-                    <div class="language-selector-small">
-                        <span class="fi fi-us"></span>
-                        <span>English</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="footer-built">
-                        <i class="fas fa-heart"></i>
-                        Built with Firebase & AI Magic
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
-    <!-- App Scripts -->
-    <script src="firebase.js"></script>
+    <!-- Scripts -->
     <script src="script.js"></script>
-    <script src="language.js"></script>
 </body>
 </html>
