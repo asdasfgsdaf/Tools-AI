@@ -39,6 +39,14 @@ function initApp() {
     
     // Focar no input
     elements.chatInput.focus();
+    
+    // Se não houver chats, criar um automaticamente
+    if (chats.length === 0) {
+        createNewChat();
+    } else {
+        // Carregar o último chat
+        loadChat(chats[0].id);
+    }
 }
 
 // ===== EVENT LISTENERS =====
@@ -76,7 +84,10 @@ function setupEventListeners() {
             autoResizeTextarea();
             
             // Esconder mensagem de boas-vindas
-            document.querySelector('.welcome-message').classList.add('hidden');
+            const welcomeMsg = document.querySelector('.welcome-message');
+            if (welcomeMsg) {
+                welcomeMsg.classList.add('hidden');
+            }
         });
     });
 }
@@ -106,20 +117,35 @@ function closeMobileSidebar() {
 
 // ===== GERENCIAMENTO DE CHATS =====
 function loadChats() {
-    const savedChats = localStorage.getItem('neuralink_chats');
-    if (savedChats) {
-        chats = JSON.parse(savedChats);
-        renderChatHistory();
+    try {
+        const savedChats = localStorage.getItem('neuralink_chats');
+        if (savedChats) {
+            chats = JSON.parse(savedChats);
+            console.log('Chats carregados:', chats.length);
+        } else {
+            chats = [];
+            console.log('Nenhum chat salvo encontrado');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar chats:', error);
+        chats = [];
     }
 }
 
 function saveChats() {
-    localStorage.setItem('neuralink_chats', JSON.stringify(chats));
+    try {
+        localStorage.setItem('neuralink_chats', JSON.stringify(chats));
+        console.log('Chats salvos:', chats.length);
+    } catch (error) {
+        console.error('Erro ao salvar chats:', error);
+    }
 }
 
 function createNewChat() {
+    console.log('Criando novo chat...');
+    
     // Criar novo ID único
-    currentChatId = 'chat_' + Date.now();
+    currentChatId = 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     
     // Criar objeto do chat
     const newChat = {
@@ -131,7 +157,9 @@ function createNewChat() {
         model: selectedModel
     };
     
-    // Adicionar à lista
+    console.log('Novo chat criado:', newChat);
+    
+    // Adicionar ao início da lista
     chats.unshift(newChat);
     
     // Salvar no LocalStorage
@@ -144,18 +172,34 @@ function createNewChat() {
     clearChatMessages();
     
     // Mostrar mensagem de boas-vindas
-    document.querySelector('.welcome-message').classList.remove('hidden');
+    const welcomeMsg = document.querySelector('.welcome-message');
+    if (welcomeMsg) {
+        welcomeMsg.classList.remove('hidden');
+    }
+    
+    // Atualizar modelo selecionado
+    elements.modelSelect.value = selectedModel;
+    updateSelectedModel();
     
     // Fechar sidebar no mobile
     closeMobileSidebar();
     
     // Focar no input
     elements.chatInput.focus();
+    
+    // Mostrar notificação
+    showNotification('Novo chat criado!', 'success');
 }
 
 function loadChat(chatId) {
+    console.log('Carregando chat:', chatId);
+    
     const chat = chats.find(c => c.id === chatId);
-    if (!chat) return;
+    if (!chat) {
+        console.error('Chat não encontrado:', chatId);
+        createNewChat();
+        return;
+    }
     
     currentChatId = chatId;
     
@@ -170,10 +214,16 @@ function loadChat(chatId) {
     // Carregar mensagens do chat
     if (chat.messages.length === 0) {
         // Mostrar mensagem de boas-vindas se não houver mensagens
-        document.querySelector('.welcome-message').classList.remove('hidden');
+        const welcomeMsg = document.querySelector('.welcome-message');
+        if (welcomeMsg) {
+            welcomeMsg.classList.remove('hidden');
+        }
     } else {
         // Esconder mensagem de boas-vindas
-        document.querySelector('.welcome-message').classList.add('hidden');
+        const welcomeMsg = document.querySelector('.welcome-message');
+        if (welcomeMsg) {
+            welcomeMsg.classList.add('hidden');
+        }
         
         // Renderizar mensagens
         chat.messages.forEach(message => {
@@ -189,12 +239,19 @@ function loadChat(chatId) {
     
     // Focar no input
     elements.chatInput.focus();
+    
+    console.log('Chat carregado com sucesso');
 }
 
-function deleteChat(chatId) {
+function deleteChat(chatId, event) {
+    if (event) event.preventDefault();
+    
     if (!confirm('Tem certeza que deseja excluir este chat?')) return;
     
+    console.log('Excluindo chat:', chatId);
+    
     // Remover da lista
+    const initialLength = chats.length;
     chats = chats.filter(c => c.id !== chatId);
     
     // Salvar no LocalStorage
@@ -202,14 +259,26 @@ function deleteChat(chatId) {
     
     // Se era o chat atual, criar novo
     if (currentChatId === chatId) {
-        createNewChat();
+        if (chats.length > 0) {
+            loadChat(chats[0].id);
+        } else {
+            createNewChat();
+        }
     } else {
         renderChatHistory();
     }
+    
+    showNotification('Chat excluído!', 'success');
+    console.log('Chat excluído. Antes:', initialLength, 'Depois:', chats.length);
 }
 
 function renderChatHistory() {
     const chatHistory = elements.chatHistory;
+    
+    if (!chatHistory) {
+        console.error('Elemento chat-history não encontrado');
+        return;
+    }
     
     if (chats.length === 0) {
         chatHistory.innerHTML = `
@@ -236,10 +305,11 @@ function renderChatHistory() {
             'Sem mensagens';
         
         const time = formatTime(new Date(chat.updatedAt));
+        const title = chat.title || 'Chat sem título';
         
         html += `
             <div class="chat-item ${isActive ? 'active' : ''}" data-chat-id="${chat.id}">
-                <div class="chat-item-title">${chat.title}</div>
+                <div class="chat-item-title">${title}</div>
                 <div class="chat-item-preview">${preview}</div>
                 <div class="chat-item-time">${time}</div>
             </div>
@@ -250,18 +320,33 @@ function renderChatHistory() {
     
     // Adicionar event listeners aos itens
     document.querySelectorAll('.chat-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
             const chatId = item.dataset.chatId;
             loadChat(chatId);
         });
         
-        // Context menu para deletar
+        // Context menu para deletar (clique direito)
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             const chatId = item.dataset.chatId;
-            deleteChat(chatId);
+            deleteChat(chatId, e);
+        });
+        
+        // Clique longo no mobile (opcional)
+        let pressTimer;
+        item.addEventListener('touchstart', (e) => {
+            pressTimer = setTimeout(() => {
+                const chatId = item.dataset.chatId;
+                deleteChat(chatId, e);
+            }, 1000); // 1 segundo
+        });
+        
+        item.addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
         });
     });
+    
+    console.log('Histórico renderizado:', sortedChats.length, 'chats');
 }
 
 // ===== MENSAGENS =====
@@ -279,17 +364,28 @@ function sendMessage() {
         return;
     }
     
+    // Se não houver chat atual, criar um
+    if (!currentChatId || !chats.find(c => c.id === currentChatId)) {
+        console.log('Nenhum chat ativo, criando novo...');
+        createNewChat();
+    }
+    
     // Esconder mensagem de boas-vindas
-    document.querySelector('.welcome-message').classList.add('hidden');
+    const welcomeMsg = document.querySelector('.welcome-message');
+    if (welcomeMsg) {
+        welcomeMsg.classList.add('hidden');
+    }
     
     // Criar objeto da mensagem do usuário
     const userMessage = {
-        id: 'msg_' + Date.now(),
+        id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         text: messageText,
         sender: 'user',
         timestamp: new Date().toISOString(),
         model: selectedModel
     };
+    
+    console.log('Enviando mensagem:', userMessage);
     
     // Adicionar mensagem do usuário à UI
     addMessageToUI(userMessage);
@@ -299,30 +395,22 @@ function sendMessage() {
     updateCharCount();
     autoResizeTextarea();
     
-    // Encontrar ou criar chat atual
+    // Encontrar chat atual
     let currentChat = chats.find(c => c.id === currentChatId);
     
     if (!currentChat) {
-        // Criar novo chat se não existir
-        currentChatId = 'chat_' + Date.now();
-        currentChat = {
-            id: currentChatId,
-            title: messageText.length > 30 ? messageText.substring(0, 30) + '...' : messageText,
-            messages: [userMessage],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            model: selectedModel
-        };
-        chats.unshift(currentChat);
-    } else {
-        // Adicionar mensagem ao chat existente
-        currentChat.messages.push(userMessage);
-        currentChat.updatedAt = new Date().toISOString();
-        
-        // Atualizar título se for a primeira mensagem
-        if (currentChat.messages.length === 1) {
-            currentChat.title = messageText.length > 30 ? messageText.substring(0, 30) + '...' : messageText;
-        }
+        console.error('Chat atual não encontrado, criando novo...');
+        createNewChat();
+        currentChat = chats.find(c => c.id === currentChatId);
+    }
+    
+    // Adicionar mensagem ao chat
+    currentChat.messages.push(userMessage);
+    currentChat.updatedAt = new Date().toISOString();
+    
+    // Atualizar título se for a primeira mensagem
+    if (currentChat.messages.length === 1) {
+        currentChat.title = messageText.length > 30 ? messageText.substring(0, 30) + '...' : messageText;
     }
     
     // Salvar chats
@@ -336,10 +424,14 @@ function sendMessage() {
 }
 
 function simulateAIResponse(userMessage) {
+    console.log('Simulando resposta da IA para:', userMessage.substring(0, 50));
+    
     // Mostrar indicador de digitação
     showTypingIndicator();
     
-    // Simular tempo de resposta
+    // Simular tempo de resposta baseado no modelo
+    const delay = getResponseDelay(selectedModel);
+    
     setTimeout(() => {
         // Remover indicador
         removeTypingIndicator();
@@ -349,12 +441,14 @@ function simulateAIResponse(userMessage) {
         
         // Criar objeto da mensagem da IA
         const aiMessage = {
-            id: 'ai_' + Date.now(),
+            id: 'ai_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             text: response,
             sender: 'ai',
             timestamp: new Date().toISOString(),
             model: selectedModel
         };
+        
+        console.log('Resposta da IA gerada:', aiMessage.id);
         
         // Adicionar mensagem da IA à UI
         addMessageToUI(aiMessage);
@@ -367,70 +461,75 @@ function simulateAIResponse(userMessage) {
             saveChats();
             renderChatHistory();
         }
-    }, getResponseDelay(selectedModel));
+    }, delay);
 }
 
 function generateAIResponse(userMessage, model) {
     const responses = {
         auto: [
-            `Entendi sua pergunta sobre "${userMessage.substring(0, 40)}...". Como estou no modo automático, vou analisar sua solicitação e usar o modelo mais adequado.\n\n` +
-            `Baseado no que você perguntou, aqui está uma resposta detalhada que combina conhecimentos de programação e criatividade para oferecer a melhor solução possível.`,
+            `Entendi sua pergunta sobre "${userMessage.substring(0, 40)}...". Como estou no modo automático, selecionei o modelo mais adequado para responder.\n\n` +
+            `Baseado na minha análise, aqui está uma resposta completa que combina diferentes conhecimentos para oferecer a melhor solução possível.\n\n` +
+            `Se precisar de mais detalhes ou uma abordagem diferente, é só me avisar!`,
             
-            `Ótima pergunta! Estou analisando sua solicitação no modo automático para fornecer a resposta mais precisa.\n\n` +
+            `Ótima pergunta! Estou no modo automático, então analisei sua solicitação e escolhi a melhor forma de responder.\n\n` +
             `**Minha análise:**\n` +
             `• Identifiquei o tipo de solicitação\n` +
             `• Selecionei o modelo mais apropriado\n` +
             `• Preparei uma resposta completa\n\n` +
-            `Aqui está o que você precisa saber:`
+            `Aqui está o que você precisa saber:\n` +
+            `A resposta foi gerada considerando as melhores práticas e soluções mais eficientes para o seu caso.`
         ],
         
         claude: [
-            `Como Claude, especializado em raciocínio complexo, analisei sua questão sobre "${userMessage.substring(0, 40)}...".\n\n` +
+            `Como Claude, especializado em raciocínio complexo, analisei profundamente sua questão sobre "${userMessage.substring(0, 40)}...".\n\n` +
             `**Análise detalhada:**\n` +
-            `1. Primeiro, vamos entender o contexto completo\n` +
-            `2. Depois, explorar diferentes abordagens\n` +
-            `3. Finalmente, escolher a solução mais robusta\n\n` +
+            `1. Primeiro, entendi completamente o contexto\n` +
+            `2. Depois, explorei diferentes abordagens possíveis\n` +
+            `3. Avaliei os prós e contras de cada uma\n` +
+            `4. Finalmente, selecionei a solução mais robusta\n\n` +
             `**Minha recomendação:**\n` +
             `Baseado na minha análise, sugiro a seguinte abordagem que considera todos os aspectos importantes.`,
             
-            `Excelente questão para o Claude! Vou fornecer uma análise completa.\n\n` +
+            `Excelente questão para o Claude! Posso ver que você está procurando uma análise profunda.\n\n` +
             `**Considerações importantes:**\n` +
-            `• Contexto e implicações\n` +
-            `• Soluções alternativas\n` +
-            `• Casos extremos\n` +
+            `• Contexto completo e implicações\n` +
+            `• Soluções alternativas viáveis\n` +
+            `• Casos extremos e tratamento de erros\n` +
             `• Manutenibilidade a longo prazo\n\n` +
             `**Resposta estruturada:**\n` +
-            `Aqui está uma solução bem pensada que aborda todos os pontos cruciais.`
+            `Aqui está uma solução bem pensada que aborda todos os pontos cruciais de forma clara e organizada.`
         ],
         
         deepseek: [
-            `DeepSeek analisando sua solicitação de código...\n\n` +
-            `**Análise do código/problema:**\n` +
+            `🔍 DeepSeek analisando sua solicitação de código...\n\n` +
+            `**Análise técnica:**\n` +
             `✅ Sintaxe verificada\n` +
+            `✅ Estrutura avaliada\n` +
             `🔍 Oportunidades de otimização identificadas\n` +
             `💡 Sugestões de melhoria:\n\n` +
-            `1. **Performance:** Estruturas de dados mais eficientes\n` +
-            `2. **Legibilidade:** Comentários para lógica complexa\n` +
-            `3. **Tratamento de erros:** Verificação abrangente\n` +
-            `4. **Testes:** Cobertura de casos extremos\n\n` +
+            `1. **Performance:** Podemos usar estruturas de dados mais eficientes\n` +
+            `2. **Legibilidade:** Adicionar comentários para lógica complexa\n` +
+            `3. **Tratamento de erros:** Implementar verificação mais abrangente\n` +
+            `4. **Testes:** Melhorar cobertura de casos extremos\n\n` +
             `**Código otimizado:**\n` +
-            `Aqui está uma versão melhorada:`,
+            `Com base na análise, aqui está uma versão melhorada.`,
             
-            `Análise DeepSeek completa!\n\n` +
-            `**Avaliação técnica:**\n` +
+            `🚀 Análise DeepSeek completa!\n\n` +
+            `**Avaliação técnica detalhada:**\n` +
             `• Complexidade: Média\n` +
             `• Potencial de otimização: Alto\n` +
-            `• Melhores práticas: Boa aderência\n\n` +
+            `• Adesão às melhores práticas: Boa\n` +
+            `• Manutenibilidade: Excelente\n\n` +
             `**Recomendações específicas:**\n` +
-            `1. Refatorar código duplicado\n` +
-            `2. Implementar cache para operações caras\n` +
-            `3. Usar padrões de design apropriados\n` +
-            `4. Considerar uso de memória`
+            `1. Refatorar código duplicado em funções reutilizáveis\n` +
+            `2. Implementar cache para operações computacionalmente caras\n` +
+            `3. Usar padrões de design apropriados para escalabilidade\n` +
+            `4. Considerar uso de memória e garbage collection`
         ],
         
         copilot: [
-            `GitHub Copilot gerando código para: "${userMessage.substring(0, 40)}..."\n\n` +
-            ````javascript\n` +
+            `💻 GitHub Copilot gerando solução para: "${userMessage.substring(0, 40)}..."\n\n` +
+            `\`\`\`javascript\n` +
             `// ${userMessage.substring(0, 30)}\n` +
             `function solução() {\n` +
             `  // Implementação baseada nos requisitos\n` +
@@ -449,12 +548,12 @@ function generateAIResponse(userMessage, model) {
             `  // Lógica principal aqui\n` +
             `  return { sucesso: true, dados: 'processados' };\n` +
             `}\n` +
-            ````\n\n` +
+            `\`\`\`\n\n` +
             `**Explicação:**\n` +
-            `Esta implementação segue as melhores práticas com tratamento de erros adequado.`,
+            `Esta implementação segue as melhores práticas com tratamento de erros adequado e estrutura modular.`,
             
-            `Aqui está uma implementação completa baseada na sua solicitação:\n\n` +
-            ````python\n` +
+            `👨‍💻 Aqui está uma implementação completa baseada na sua solicitação:\n\n` +
+            `\`\`\`python\n` +
             `#!/usr/bin/env python3\n` +
             `# ${userMessage.substring(0, 30)}\n` +
             `\n` +
@@ -472,65 +571,58 @@ function generateAIResponse(userMessage, model) {
             `    solução = Solução()\n` +
             `    resultado = solução.processar("teste")\n` +
             `    print(f"Resultado: {resultado}")\n` +
-            ````\n\n` +
-            `Este código inclui type hints e segue as melhores práticas Python.`
+            `\`\`\`\n\n` +
+            `**Características:**\n` +
+            `• Type hints para melhor verificação\n` +
+            `• Documentação adequada\n` +
+            `• Boas práticas Python\n` +
+            `• Fácil de testar e manter`
         ],
         
         gemini: [
-            `Gemini preparando geração de imagem para: "${userMessage.substring(0, 40)}..."\n\n` +
+            `🖼️ Gemini preparando geração de imagem para: "${userMessage.substring(0, 40)}..."\n\n` +
             `**Detalhes da geração:**\n` +
             `• Estilo: Foto-realista\n` +
-            `• Resolução: 4K\n` +
+            `• Resolução: 4K (3840x2160)\n` +
             `• Proporção: 16:9\n` +
             `• Iluminação: Estúdio profissional\n` +
-            `• Composição: Regra dos terços\n\n` +
-            `**Prompt aprimorado:**\n` +
-            `"Fotografia profissional de [seu assunto], textura detalhada, foco nítido, iluminação cinematográfica, alta resolução, 8K, ultra-realista, qualidade de estúdio, obra-prima"\n\n` +
-            `Pronto para gerar esta imagem?`,
+            `• Composição: Regra dos terços\n` +
+            `• Profundidade de campo: Baixa para foco seletivo\n\n` +
+            `**Prompt aprimorado para melhores resultados:**\n` +
+            `"Fotografia profissional de [seu assunto], textura detalhada, foco nítido, iluminação cinematográfica, alta resolução, 8K, ultra-realista, qualidade de estúdio, obra-prima, tendência no ArtStation"\n\n` +
+            `Pronto para gerar esta imagem incrível?`,
             
-            `Criando imagem baseada em: "${userMessage.substring(0, 40)}..."\n\n` +
-            `**Configurações do Gemini:**\n` +
-            `📸 **Estilo Fotográfico:**\n` +
-            `- Câmera: DSLR profissional\n` +
-            `- Lente: 50mm prime\n` +
-            `- Abertura: f/2.8\n` +
-            `- ISO: 100\n` +
-            `- Velocidade: 1/125s\n\n` +
-            `🎨 **Elementos visuais:**\n` +
-            `- Paleta de cores: Harmônica\n` +
-            `- Contraste: Moderado\n` +
-            `- Saturação: Cores naturais\n` +
-            `- Nitidez: Alto detalhe`
+            `📸 Criando imagem baseada em: "${userMessage.substring(0, 40)}..."\n\n` +
+            `**Configurações avançadas do Gemini:**\n` +
+            `📷 **Configurações da câmera:**\n` +
+            `- Modelo: DSLR profissional\n` +
+            `- Lente: 50mm prime f/1.8\n` +
+            `- Abertura: f/2.8 para bokeh suave\n` +
+            `- ISO: 100 para baixo ruído\n` +
+            `- Velocidade do obturador: 1/125s\n` +
+            `- Balanço de branco: Daylight\n\n` +
+            `🎨 **Elementos visuais e estilo:**\n` +
+            `- Paleta de cores: Harmônica e equilibrada\n` +
+            `- Contraste: Moderado para look natural\n` +
+            `- Saturação: Cores verdadeiras à vida\n` +
+            `- Nitidez: Alto detalhe e textura\n` +
+            `- Atmosfera: Profissional e envolvente`
         ],
         
         nanobanana: [
             `🎨 NanoBanana criando imagem artística para: "${userMessage.substring(0, 40)}..."\n\n` +
-            `**Estilo artístico:**\n` +
-            `✨ **Toque especial:**\n` +
-            `- Estilo: Pintura digital\n` +
-            `- Humor: Criativo e expressivo\n` +
-            `- Cores: Vibrantes e imaginativas\n` +
-            `- Texturas: Pinceladas artísticas\n` +
-            `- Composição: Dinâmica\n\n` +
-            `**Interpretação artística:**\n` +
-            `Vou interpretar sua solicitação com liberdade criativa, adicionando elementos que realçam o apelo visual.\n\n` +
-            `**Prompt criativo:**\n` +
-            `"Pintura digital caprichosa de [seu assunto], cores vibrantes, pinceladas expressivas, elementos de fantasia, atmosfera mágica, detalhada, tendência no ArtStation, obra-prima"`,
-            
-            `🌟 Modo criativo NanoBanana ativado!\n\n` +
-            `**Recursos criativos:**\n` +
-            `🎭 **Interpretação artística:**\n` +
-            `- Estilo: Mídia mista\n` +
-            `- Inspiração: Fantasia e surrealismo\n` +
-            `- Cores: Ousadas e não convencionais\n` +
-            `- Textura: Camadas complexas\n\n` +
-            `✨ **Elementos mágicos:**\n` +
-            `- Efeitos brilhantes\n` +
-            `- Iluminação etérea\n` +
-            `- Atmosfera mística\n` +
-            `- Qualidade onírica\n\n` +
-            `**Resultado esperado:**\n` +
-            `Uma interpretação artística única que vai além da representação literal.`
+            `**Estilo artístico único:**\n` +
+            `✨ **Características especiais:**\n` +
+            `- Técnica: Pintura digital mista\n` +
+            `- Humor: Criativo, expressivo e imaginativo\n` +
+            `- Esquema de cores: Vibrante e não convencional\n` +
+            `- Texturas: Pinceladas visíveis, estilo impressionista\n` +
+            `- Composição: Dinâmica e quebra regras\n` +
+            `- Inspiração: Arte fantasia e surrealismo\n\n` +
+            `**Interpretação artística livre:**\n` +
+            `Vou interpretar sua ideia com liberdade criativa total, adicionando elementos surpreendentes que realçam o apelo visual emocional.\n\n` +
+            `**Prompt criativo ideal:**\n` +
+            `"Pintura digital caprichosa de [seu assunto], cores vibrantes explosivas, pinceladas expressivas grossas, elementos de fantasia mágica, atmosfera onírica, detalhada, estilo ArtStation trending, masterpiece digital art"`
         ]
     };
     
@@ -540,14 +632,14 @@ function generateAIResponse(userMessage, model) {
 
 function getResponseDelay(model) {
     const delays = {
-        'auto': 1500,
-        'claude': 2000,
-        'deepseek': 1200,
-        'copilot': 1000,
-        'gemini': 1800,
-        'nanobanana': 1600
+        'auto': 1200,
+        'claude': 1800,
+        'deepseek': 1000,
+        'copilot': 800,
+        'gemini': 1500,
+        'nanobanana': 1400
     };
-    return delays[model] || 1500;
+    return delays[model] || 1200;
 }
 
 function addMessageToUI(message, scroll = true) {
@@ -624,6 +716,9 @@ function clearChatMessages() {
 
 // ===== INDICADOR DE DIGITAÇÃO =====
 function showTypingIndicator() {
+    // Remover indicador existente se houver
+    removeTypingIndicator();
+    
     const typingDiv = document.createElement('div');
     typingDiv.className = 'message typing';
     typingDiv.id = 'typing-indicator';
@@ -640,30 +735,6 @@ function showTypingIndicator() {
             </div>
         </div>
     `;
-    
-    // Adicionar estilo para os pontos
-    const style = document.createElement('style');
-    style.textContent = `
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-            padding: 16px;
-        }
-        .typing-dots span {
-            width: 8px;
-            height: 8px;
-            background-color: var(--text-muted);
-            border-radius: 50%;
-            animation: typing 1.4s infinite ease-in-out;
-        }
-        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes typing {
-            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
-            40% { transform: scale(1); opacity: 1; }
-        }
-    `;
-    document.head.appendChild(style);
     
     elements.chatMessages.appendChild(typingDiv);
     typingDiv.scrollIntoView({ behavior: 'smooth' });
@@ -697,7 +768,9 @@ function updateSelectedModel() {
         const currentChat = chats.find(c => c.id === currentChatId);
         if (currentChat) {
             currentChat.model = selectedModel;
+            currentChat.updatedAt = new Date().toISOString();
             saveChats();
+            renderChatHistory();
         }
     }
 }
@@ -735,7 +808,7 @@ function formatTime(date) {
     
     if (diffMins < 1) return 'Agora';
     if (diffMins < 60) return `${diffMins} min atrás`;
-    if (diffHours < 24) return `${diffHours} h atrás`;
+    if (diffHours < 24) return `${diffHours}h atrás`;
     if (diffDays < 7) return `${diffDays} dias atrás`;
     
     return date.toLocaleDateString('pt-BR', { 
@@ -756,32 +829,24 @@ function showNotification(message, type = 'info') {
     notification.className = `notification notification-${type}`;
     
     // Adicionar estilos
+    const bgColor = type === 'error' ? '#EF4444' : 
+                   type === 'warning' ? '#F59E0B' : 
+                   type === 'success' ? '#10B981' : '#3B82F6';
+    
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background: ${type === 'error' ? '#EF4444' : type === 'warning' ? '#F59E0B' : '#10B981'};
+        background: ${bgColor};
         color: white;
         padding: 12px 20px;
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow-lg);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         z-index: 1000;
         animation: slideIn 0.3s ease;
+        font-size: 14px;
+        max-width: 300px;
     `;
-    
-    // Adicionar animação
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
     
     notification.textContent = message;
     document.body.appendChild(notification);
@@ -793,6 +858,69 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
+// Adicionar estilos CSS para as notificações
+if (!document.querySelector('#notification-styles')) {
+    const style = document.createElement('style');
+    style.id = 'notification-styles';
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Adicionar estilos CSS para o badge do modelo nas mensagens
+if (!document.querySelector('#message-model-styles')) {
+    const style = document.createElement('style');
+    style.id = 'message-model-styles';
+    style.textContent = `
+        .message-model {
+            display: inline-block;
+            font-size: 11px;
+            background: rgba(124, 58, 237, 0.2);
+            color: var(--primary-light);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+        
+        .message.user .message-model {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--secondary);
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// ===== DEBUG/DEV TOOLS =====
+// Função para limpar todos os dados (útil para desenvolvimento)
+function clearAllData() {
+    if (confirm('TEM CERTEZA? Isso vai apagar TODOS os chats permanentemente.')) {
+        localStorage.removeItem('neuralink_chats');
+        chats = [];
+        currentChatId = null;
+        clearChatMessages();
+        renderChatHistory();
+        createNewChat();
+        showNotification('Todos os dados foram apagados', 'success');
+    }
+}
+
+// Adicionar botão de limpeza no console para desenvolvimento
+console.log('%cNeuraLink AI Debug', 'color: #7C3AED; font-size: 16px; font-weight: bold;');
+console.log('Comandos disponíveis:');
+console.log('- app.createNewChat() - Criar novo chat');
+console.log('- app.chats() - Ver todos os chats');
+console.log('- clearAllData() - Limpar todos os dados (CUIDADO!)');
+console.log('- localStorage.clear() - Limpar LocalStorage');
+
 // ===== EXPORTAR FUNÇÕES PARA DEBUG =====
 window.app = {
     createNewChat,
@@ -800,5 +928,6 @@ window.app = {
     deleteChat,
     sendMessage,
     chats: () => chats,
-    currentChatId: () => currentChatId
+    currentChatId: () => currentChatId,
+    clearAllData
 };
