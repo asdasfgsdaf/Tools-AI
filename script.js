@@ -2,6 +2,8 @@
 let currentChatId = null;
 let chats = [];
 let selectedModel = 'auto';
+let useRealAPI = false;
+let apiManager = window.apiManager;
 
 // ===== ELEMENTOS DOM =====
 const elements = {
@@ -16,7 +18,19 @@ const elements = {
     sendBtn: document.getElementById('send-btn'),
     modelSelect: document.getElementById('model-select'),
     currentModelInfo: document.getElementById('current-model-info'),
-    charCount: document.getElementById('char-count')
+    charCount: document.getElementById('char-count'),
+    apiToggleBtn: document.getElementById('api-toggle-btn'),
+    apiSettingsBtn: document.getElementById('api-settings-btn'),
+    apiStatusBadge: document.getElementById('api-status-badge'),
+    modelBtnMobile: document.getElementById('model-btn-mobile'),
+    newChatMobile: document.getElementById('new-chat-mobile'),
+    modelModal: document.getElementById('model-modal'),
+    modelOptions: document.getElementById('model-options'),
+    closeModelModal: document.getElementById('close-model-modal'),
+    apiModal: document.getElementById('api-modal'),
+    apiSettings: document.getElementById('api-settings'),
+    closeApiModal: document.getElementById('close-api-modal'),
+    saveApiSettings: document.getElementById('save-api-settings')
 };
 
 // ===== INICIALIZAÇÃO =====
@@ -24,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
-function initApp() {
+async function initApp() {
     // Carregar chats do LocalStorage
     loadChats();
     
@@ -39,6 +53,16 @@ function initApp() {
     
     // Focar no input
     elements.chatInput.focus();
+    
+    // Inicializar API Manager
+    if (window.apiManager) {
+        // Verificar se tem API ativa
+        const activeProvider = apiManager.getActiveModel();
+        if (activeProvider) {
+            useRealAPI = true;
+            updateAPIStatusUI();
+        }
+    }
     
     // Se não houver chats, criar um automaticamente
     if (chats.length === 0) {
@@ -74,6 +98,19 @@ function setupEventListeners() {
     // Selecionar modelo
     elements.modelSelect.addEventListener('change', updateSelectedModel);
     
+    // Botões de API
+    elements.apiToggleBtn.addEventListener('click', toggleAPIUsage);
+    elements.apiSettingsBtn.addEventListener('click', showAPISettings);
+    
+    // Botões mobile
+    elements.modelBtnMobile.addEventListener('click', showMobileModelSelector);
+    elements.newChatMobile.addEventListener('click', createNewChat);
+    
+    // Modals
+    elements.closeModelModal.addEventListener('click', () => closeModal('model-modal'));
+    elements.closeApiModal.addEventListener('click', () => closeModal('api-modal'));
+    elements.saveApiSettings.addEventListener('click', saveAPISettings);
+    
     // Botões de prompt rápido
     document.querySelectorAll('.prompt-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -89,6 +126,13 @@ function setupEventListeners() {
                 welcomeMsg.classList.add('hidden');
             }
         });
+    });
+    
+    // Fechar modal ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('model-modal')) {
+            e.target.classList.remove('show');
+        }
     });
 }
 
@@ -183,6 +227,9 @@ function createNewChat() {
     
     // Fechar sidebar no mobile
     closeMobileSidebar();
+    
+    // Fechar modais
+    closeModal('model-modal');
     
     // Focar no input
     elements.chatInput.focus();
@@ -350,7 +397,7 @@ function renderChatHistory() {
 }
 
 // ===== MENSAGENS =====
-function sendMessage() {
+async function sendMessage() {
     const messageText = elements.chatInput.value.trim();
     
     if (!messageText) {
@@ -419,25 +466,53 @@ function sendMessage() {
     // Atualizar histórico
     renderChatHistory();
     
-    // Simular resposta da IA
-    simulateAIResponse(messageText);
+    // Obter resposta da IA
+    await getAIResponse(messageText);
 }
 
-function simulateAIResponse(userMessage) {
-    console.log('Simulando resposta da IA para:', userMessage.substring(0, 50));
+async function getAIResponse(userMessage) {
+    console.log('Obtendo resposta para:', userMessage.substring(0, 50));
     
     // Mostrar indicador de digitação
     showTypingIndicator();
     
-    // Simular tempo de resposta baseado no modelo
-    const delay = getResponseDelay(selectedModel);
-    
-    setTimeout(() => {
+    try {
+        let response;
+        let isRealAPI = false;
+        
+        // Verificar se deve usar API real
+        if (useRealAPI && window.apiManager) {
+            const activeProvider = apiManager.getActiveModel();
+            if (activeProvider) {
+                console.log('Usando API real:', activeProvider.name);
+                isRealAPI = true;
+                
+                // Tempo de resposta baseado no provedor
+                const delay = getResponseDelay(selectedModel);
+                
+                response = await new Promise((resolve, reject) => {
+                    setTimeout(async () => {
+                        try {
+                            const apiResponse = await apiManager.sendRequest(userMessage);
+                            resolve(apiResponse);
+                        } catch (error) {
+                            console.error('Erro na API real:', error);
+                            // Fallback para resposta simulada
+                            resolve(generateAIResponse(userMessage, selectedModel));
+                        }
+                    }, delay);
+                });
+            } else {
+                console.log('Nenhuma API ativa, usando resposta simulada');
+                response = await generateSimulatedResponse(userMessage);
+            }
+        } else {
+            console.log('Usando resposta simulada');
+            response = await generateSimulatedResponse(userMessage);
+        }
+        
         // Remover indicador
         removeTypingIndicator();
-        
-        // Gerar resposta baseada no modelo selecionado
-        const response = generateAIResponse(userMessage, selectedModel);
         
         // Criar objeto da mensagem da IA
         const aiMessage = {
@@ -445,7 +520,8 @@ function simulateAIResponse(userMessage) {
             text: response,
             sender: 'ai',
             timestamp: new Date().toISOString(),
-            model: selectedModel
+            model: selectedModel,
+            isRealAPI: isRealAPI
         };
         
         console.log('Resposta da IA gerada:', aiMessage.id);
@@ -461,7 +537,45 @@ function simulateAIResponse(userMessage) {
             saveChats();
             renderChatHistory();
         }
-    }, delay);
+        
+    } catch (error) {
+        console.error('Erro ao obter resposta:', error);
+        removeTypingIndicator();
+        showNotification('Erro ao obter resposta da IA', 'error');
+        
+        // Fallback para resposta simulada
+        setTimeout(() => {
+            const fallbackResponse = generateAIResponse(userMessage, selectedModel);
+            
+            const fallbackMessage = {
+                id: 'ai_fallback_' + Date.now(),
+                text: fallbackResponse,
+                sender: 'ai',
+                timestamp: new Date().toISOString(),
+                model: selectedModel,
+                isRealAPI: false
+            };
+            
+            addMessageToUI(fallbackMessage);
+            
+            const currentChat = chats.find(c => c.id === currentChatId);
+            if (currentChat) {
+                currentChat.messages.push(fallbackMessage);
+                currentChat.updatedAt = new Date().toISOString();
+                saveChats();
+                renderChatHistory();
+            }
+        }, 500);
+    }
+}
+
+async function generateSimulatedResponse(userMessage) {
+    return new Promise(resolve => {
+        const delay = getResponseDelay(selectedModel);
+        setTimeout(() => {
+            resolve(generateAIResponse(userMessage, selectedModel));
+        }, delay);
+    });
 }
 
 function generateAIResponse(userMessage, model) {
@@ -663,7 +777,11 @@ function addMessageToUI(message, scroll = true) {
             'gemini': 'Gemini',
             'nanobanana': 'NanoBanana'
         };
-        modelBadge = `<div class="message-model">${modelNames[message.model] || message.model}</div>`;
+        const badgeText = message.isRealAPI ? 
+            `${modelNames[message.model] || message.model} (API)` : 
+            `${modelNames[message.model] || message.model}`;
+        
+        modelBadge = `<div class="message-model">${badgeText}</div>`;
     }
     
     messageDiv.innerHTML = `
@@ -744,6 +862,198 @@ function removeTypingIndicator() {
     const typingIndicator = document.getElementById('typing-indicator');
     if (typingIndicator) {
         typingIndicator.remove();
+    }
+}
+
+// ===== GERENCIAMENTO DE API =====
+function toggleAPIUsage() {
+    if (!window.apiManager) {
+        showNotification('API Manager não carregado', 'error');
+        return;
+    }
+    
+    const activeProvider = apiManager.getActiveModel();
+    
+    if (!activeProvider && useRealAPI === false) {
+        showNotification('Configure pelo menos uma API primeiro!', 'warning');
+        showAPISettings();
+        return;
+    }
+    
+    useRealAPI = !useRealAPI;
+    const status = useRealAPI ? 'ativadas' : 'desativadas';
+    showNotification(`APIs reais ${status}`, 'success');
+    updateAPIStatusUI();
+}
+
+function updateAPIStatusUI() {
+    if (!elements.apiToggleBtn || !elements.apiStatusBadge) return;
+    
+    elements.apiToggleBtn.innerHTML = useRealAPI ? 
+        '<i class="fas fa-plug"></i>' : 
+        '<i class="fas fa-plug-circle-xmark"></i>';
+    
+    elements.apiToggleBtn.title = useRealAPI ? 'APIs reais ativas' : 'APIs reais inativas';
+    
+    elements.apiStatusBadge.textContent = useRealAPI ? 'API Real' : 'Simulado';
+    elements.apiStatusBadge.className = `api-status-badge ${useRealAPI ? 'active' : 'inactive'}`;
+}
+
+function showAPISettings() {
+    if (!elements.apiModal || !elements.apiSettings || !window.apiManager) return;
+    
+    let html = '';
+    
+    Object.entries(apiManager.config).forEach(([key, provider]) => {
+        html += `
+            <div class="api-provider" data-provider="${key}">
+                <div class="api-provider-header">
+                    <h4>${provider.name}</h4>
+                    <label class="switch">
+                        <input type="checkbox" 
+                               data-provider="${key}" 
+                               ${provider.enabled ? 'checked' : ''}
+                               onchange="toggleProvider('${key}', this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="api-provider-body ${provider.enabled ? 'show' : ''}">
+                    <div class="form-group">
+                        <label>API Key:</label>
+                        <input type="password" 
+                               data-provider="${key}" 
+                               class="api-key-input"
+                               value="${provider.apiKey || ''}"
+                               placeholder="Insira sua API key">
+                    </div>
+                    <div class="form-group">
+                        <label>Modelo:</label>
+                        <input type="text"
+                               data-provider="${key}"
+                               class="api-model-input"
+                               value="${provider.model || ''}"
+                               placeholder="Ex: gpt-3.5-turbo">
+                    </div>
+                    <div class="form-group">
+                        <label>URL Base:</label>
+                        <input type="text"
+                               data-provider="${key}"
+                               class="api-url-input"
+                               value="${provider.baseUrl || ''}"
+                               placeholder="URL da API">
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    elements.apiSettings.innerHTML = html;
+    elements.apiModal.classList.add('show');
+}
+
+function toggleProvider(providerKey, enabled) {
+    if (!window.apiManager) return;
+    
+    apiManager.config[providerKey].enabled = enabled;
+    const body = document.querySelector(`.api-provider-body[data-provider="${providerKey}"]`);
+    if (body) {
+        body.classList.toggle('show', enabled);
+    }
+}
+
+function saveAPISettings() {
+    if (!window.apiManager) {
+        showNotification('API Manager não carregado', 'error');
+        return;
+    }
+    
+    // Coletar dados dos inputs
+    document.querySelectorAll('.api-key-input').forEach(input => {
+        const provider = input.dataset.provider;
+        apiManager.config[provider].apiKey = input.value.trim();
+    });
+    
+    document.querySelectorAll('.api-model-input').forEach(input => {
+        const provider = input.dataset.provider;
+        apiManager.config[provider].model = input.value.trim();
+    });
+    
+    document.querySelectorAll('.api-url-input').forEach(input => {
+        const provider = input.dataset.provider;
+        apiManager.config[provider].baseUrl = input.value.trim();
+    });
+    
+    // Salvar configurações
+    if (apiManager.saveConfig()) {
+        showNotification('Configurações salvas!', 'success');
+        closeModal('api-modal');
+        
+        // Verificar se algum provedor está ativo
+        const hasActiveProvider = Object.values(apiManager.config).some(p => 
+            p.enabled && p.apiKey.trim()
+        );
+        
+        if (hasActiveProvider) {
+            useRealAPI = true;
+            showNotification('APIs reais ativadas automaticamente!', 'success');
+        }
+        
+        updateAPIStatusUI();
+    } else {
+        showNotification('Erro ao salvar configurações', 'error');
+    }
+}
+
+function showMobileModelSelector() {
+    if (!elements.modelModal || !elements.modelOptions) return;
+    
+    const modelOptions = {
+        'auto': { name: 'Auto', icon: 'fas fa-robot', description: 'Seleção automática' },
+        'claude': { name: 'Claude', icon: 'fas fa-brain', description: 'Raciocínio complexo' },
+        'deepseek': { name: 'DeepSeek', icon: 'fas fa-code', description: 'Programação' },
+        'copilot': { name: 'Copilot', icon: 'fab fa-github', description: 'Desenvolvimento' },
+        'gemini': { name: 'Gemini', icon: 'fas fa-image', description: 'Imagens e visão' },
+        'nanobanana': { name: 'NanoBanana', icon: 'fas fa-palette', description: 'Arte criativa' }
+    };
+    
+    let html = '';
+    
+    Object.entries(modelOptions).forEach(([key, model]) => {
+        const isActive = key === selectedModel;
+        html += `
+            <div class="model-option ${isActive ? 'active' : ''}" data-model="${key}">
+                <div>
+                    <i class="${model.icon}"></i>
+                    <span>${model.name}</span>
+                </div>
+                <div>
+                    <span class="model-badge">${model.description}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    elements.modelOptions.innerHTML = html;
+    
+    // Adicionar event listeners
+    document.querySelectorAll('.model-option').forEach(option => {
+        option.addEventListener('click', () => {
+            const model = option.dataset.model;
+            selectedModel = model;
+            elements.modelSelect.value = model;
+            updateSelectedModel();
+            closeModal('model-modal');
+            showNotification(`Modelo alterado para ${modelOptions[model].name}`, 'success');
+        });
+    });
+    
+    elements.modelModal.classList.add('show');
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('show');
     }
 }
 
@@ -828,26 +1138,6 @@ function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     
-    // Adicionar estilos
-    const bgColor = type === 'error' ? '#EF4444' : 
-                   type === 'warning' ? '#F59E0B' : 
-                   type === 'success' ? '#10B981' : '#3B82F6';
-    
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: ${bgColor};
-        color: white;
-        padding: 12px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-        font-size: 14px;
-        max-width: 300px;
-    `;
-    
     notification.textContent = message;
     document.body.appendChild(notification);
     
@@ -858,52 +1148,11 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// Adicionar estilos CSS para as notificações
-if (!document.querySelector('#notification-styles')) {
-    const style = document.createElement('style');
-    style.id = 'notification-styles';
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-// Adicionar estilos CSS para o badge do modelo nas mensagens
-if (!document.querySelector('#message-model-styles')) {
-    const style = document.createElement('style');
-    style.id = 'message-model-styles';
-    style.textContent = `
-        .message-model {
-            display: inline-block;
-            font-size: 11px;
-            background: rgba(124, 58, 237, 0.2);
-            color: var(--primary-light);
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-top: 8px;
-            font-weight: 500;
-        }
-        
-        .message.user .message-model {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--secondary);
-        }
-    `;
-    document.head.appendChild(style);
-}
-
 // ===== DEBUG/DEV TOOLS =====
-// Função para limpar todos os dados (útil para desenvolvimento)
 function clearAllData() {
     if (confirm('TEM CERTEZA? Isso vai apagar TODOS os chats permanentemente.')) {
         localStorage.removeItem('neuralink_chats');
+        localStorage.removeItem('neuralink_api_config');
         chats = [];
         currentChatId = null;
         clearChatMessages();
@@ -920,6 +1169,7 @@ console.log('- app.createNewChat() - Criar novo chat');
 console.log('- app.chats() - Ver todos os chats');
 console.log('- clearAllData() - Limpar todos os dados (CUIDADO!)');
 console.log('- localStorage.clear() - Limpar LocalStorage');
+console.log('- apiManager - Gerenciador de APIs');
 
 // ===== EXPORTAR FUNÇÕES PARA DEBUG =====
 window.app = {
@@ -929,5 +1179,7 @@ window.app = {
     sendMessage,
     chats: () => chats,
     currentChatId: () => currentChatId,
-    clearAllData
+    clearAllData,
+    toggleAPIUsage,
+    showAPISettings
 };

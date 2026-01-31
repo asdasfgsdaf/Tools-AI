@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuraLink AI - Seu Assistente de Programação e Imagens</title>
+    <title>NeuraLink AI - Seu Assistente Inteligente</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
             <div class="sidebar-header">
                 <button class="new-chat-btn" id="new-chat">
                     <i class="fas fa-plus"></i>
-                    Novo chat
+                    <span>Novo chat</span>
                 </button>
                 <button class="sidebar-toggle" id="sidebar-toggle">
                     <i class="fas fa-chevron-left"></i>
@@ -41,8 +41,11 @@
                     </div>
                 </div>
                 <div class="sidebar-actions">
-                    <button class="action-btn" title="Configurações">
-                        <i class="fas fa-cog"></i>
+                    <button class="action-btn" id="api-settings-btn" title="Configurações de API">
+                        <i class="fas fa-sliders-h"></i>
+                    </button>
+                    <button class="action-btn" id="api-toggle-btn" title="APIs reais">
+                        <i class="fas fa-plug-circle-xmark"></i>
                     </button>
                 </div>
             </div>
@@ -70,6 +73,7 @@
                             <option value="nanobanana">NanoBanana</option>
                         </select>
                     </div>
+                    <span id="api-status-badge" class="api-status-badge inactive">Simulado</span>
                 </div>
             </header>
 
@@ -95,6 +99,10 @@
                             <div class="feature">
                                 <i class="fas fa-bolt"></i>
                                 <span>Seleção automática do melhor modelo</span>
+                            </div>
+                            <div class="feature">
+                                <i class="fas fa-plug"></i>
+                                <span>APIs reais configuráveis</span>
                             </div>
                         </div>
                         <div class="quick-prompts">
@@ -148,9 +156,54 @@
 
         <!-- Mobile Sidebar Overlay -->
         <div class="mobile-overlay" id="mobile-overlay"></div>
+
+        <!-- Botões flutuantes para mobile -->
+        <div class="model-selector-mobile">
+            <button class="model-btn-mobile" id="model-btn-mobile">
+                <i class="fas fa-brain"></i>
+            </button>
+        </div>
+        
+        <div class="new-chat-mobile">
+            <button class="new-chat-btn-mobile" id="new-chat-mobile">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        
+        <!-- Modal para seleção de modelo -->
+        <div class="model-modal" id="model-modal">
+            <div class="model-modal-content">
+                <h3 class="model-modal-title">Selecione o Modelo</h3>
+                <div class="model-options" id="model-options">
+                    <!-- Opções serão geradas por JS -->
+                </div>
+                <button class="new-chat-btn" style="margin-top: 20px; width: 100%;" id="close-model-modal">
+                    Fechar
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal para configurações de API -->
+        <div class="model-modal" id="api-modal">
+            <div class="model-modal-content">
+                <h3 class="model-modal-title">Configurações de API</h3>
+                <div class="api-settings" id="api-settings">
+                    <!-- Configurações serão geradas por JS -->
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="new-chat-btn" style="flex: 1; background: var(--bg-surface); color: var(--text-primary);" id="close-api-modal">
+                        Fechar
+                    </button>
+                    <button class="new-chat-btn" style="flex: 1;" id="save-api-settings">
+                        Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
+    <script src="api.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
