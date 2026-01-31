@@ -34,7 +34,7 @@ class APIManager {
                 name: 'DeepSeek',
                 baseUrl: 'https://api.deepseek.com/v1',
                 apiKey: 'sk-8f289f32e9d94d1a89395bad40e0b4ab',
-                enabled: false,
+                enabled: true,
                 model: 'deepseek-chat'
             },
             gemini: {
